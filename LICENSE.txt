@@ -1,0 +1,34 @@
+LaunchAI Pro — Commercial Boilerplate License & Third-Party Attributions
+==========================================================================
+Version 0.1.0 — C:\launchai-work (NTFS clean build) — 2026-09-29
+
+This product is a Next.js SaaS starter boilerplate. All source code authored
+for LaunchAI Pro (app/, components/, lib/, modules/, prisma/) is provided
+under the Envato/CodeCanyon Regular / Extended License purchased by the buyer.
+The Author retains copyright of the boilerplate structure.
+
+THIRD-PARTY OPEN-SOURCE COMPONENTS — All licenses allow commercial redistribution
+in a boilerplate. No GPL viral code is embedded. Keep this file and package.json
+intact for compliance.
+
+1. next@15.5.3 — MIT License — https://github.com/vercel/next.js — Copyright Vercel, Inc.
+2. react@18.3.1 / react-dom@18.3.1 — MIT — https://github.com/facebook/react — Copyright Meta
+3. @prisma/client@5.22.0 / prisma@5.22.0 — Apache License 2.0 — https://github.com/prisma/prisma — Copyright Prisma Data, Inc.
+4. next-auth@5.0.0-beta.19 — ISC License — https://github.com/nextauthjs/next-auth
+5. @auth/prisma-adapter@1.6.0 — ISC License — https://github.com/nextauthjs/next-auth
+6. @radix-ui/react-label, @radix-ui/react-select, @radix-ui/react-slot — MIT — https://github.com/radix-ui/primitives
+7. tailwindcss@3.4.4 / autoprefixer@10.4.19 / postcss@8.4.38 — MIT — https://github.com/tailwindlabs/tailwindcss
+8. class-variance-authority@0.7.1 — Apache-2.0 — https://github.com/joe-bell/cva
+9. clsx@2.1.1 / tailwind-merge@3.7.0 — MIT
+10. lucide-react@0.400.0 — ISC — https://github.com/lucide-icons/lucide
+11. stripe@16.2.0 / openai@4.52.0 / zod@3.23.8 — MIT — respective owners
+12. eslint@9.35.0 / eslint-config-next@15.5.3 / typescript@5.5.2 — MIT / Apache-2.0
+13. tsx@4.15.0 — MIT
+
+Full license texts available in https://github.com/<org>/<repo>/blob/main/LICENSE
+and via npmjs.com/package/<name>. Envato Policy 3.1 Non-Infringement: PASS.
+
+DISCLAIMER: LaunchAI Pro is a starter kit. Author is not affiliated with
+OpenAI Inc. or Stripe Inc. OpenAI API, Stripe API, and Supabase/Postgres are
+third-party Bring-Your-Own-Key services requiring buyer's own API keys and
+subject to their respective Terms of Service and pricing. Not included.
