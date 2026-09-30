@@ -1,0 +1,151 @@
+// prisma/schema.prisma - launchai-pro v1.0.0 - Production Hardened
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = []
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS - Strict Data Integrity [OWASP A03]
+// ==========================================
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  INCOMPLETE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  INCOMPLETE_EXPIRED
+}
+
+enum GenerationTone {
+  PROFESSIONAL
+  CASUAL
+  FRIENDLY
+  FORMAL
+  CREATIVE
+  PERSUASIVE
+}
+
+enum GenerationType {
+  BLOG_POST
+  PRODUCT_DESCRIPTION
+  AD_COPY
+  EMAIL_COPY
+  SOCIAL_MEDIA
+  SEO_ARTICLE
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?   @db.VarChar(100)
+  email         String?   @unique @db.VarChar(255)
+  emailVerified DateTime?
+  image         String?   @db.Text
+  // IMPORTANT: Store only bcrypt/argon2 hash, never plaintext. Exclude from client queries via select.
+  password      String?   @db.VarChar(255)
+  role          UserRole  @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  subscriptions Subscription[]
+  aiGenerations AIGeneration[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String  @db.VarChar(50)
+  provider          String  @db.VarChar(50)
+  providerAccountId String  @db.VarChar(255)
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String? @db.VarChar(50)
+  scope             String? @db.Text
+  id_token          String? @db.Text
+  session_state     String? @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @db.VarChar(255)
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires])
+  @@map("sessions")
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String
+  stripeCustomerId       String?            @unique @db.VarChar(255)
+  stripeSubscriptionId   String?            @unique @db.VarChar(255)
+  stripePriceId          String?            @db.VarChar(255)
+  stripeCurrentPeriodEnd DateTime?
+  status                 SubscriptionStatus @default(INCOMPLETE)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model AIGeneration {
+  id        String         @id @default(cuid())
+  userId    String
+  prompt    String         @db.Text
+  result    String         @db.Text
+  tone      GenerationTone @default(PROFESSIONAL)
+  type      GenerationType @default(BLOG_POST)
+  language  String         @default("English") @db.VarChar(50)
+  title     String?        @db.VarChar(500)
+  tokens    Int? // OpenAI usage tracking for billing abuse prevention
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([type])
+  @@index([userId, type])
+  @@map("ai_generations")
+}
+
+// REQUIRED FOR NEXTAUTH EMAIL PROVIDER - Fixes C-01
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@index([expires])
+  @@map("verification_tokens")
+}

@@ -1,0 +1,22 @@
+LaunchAI Pro — Credits & Asset Attribution
+=============================================
+2026-09-29 — C:\launchai-work
+
+Code & Framework:
+- Next.js 15.5.3 — Vercel (MIT)
+- Prisma 5.22.0 — Prisma Data, Inc. (Apache-2.0)
+- NextAuth 5.0.0-beta.19 — Balázs Orbán & contributors (ISC)
+- Radix UI — WorkOS (MIT)
+- Tailwind CSS — Tailwind Labs (MIT)
+
+Demo Assets:
+- public/ directory is intentionally empty in this template. No third-party images
+  are bundled. If you add demo images, use only MIT / Unsplash Licensed or
+  CC0 assets and list them here.
+  Example: "Hero image — Unsplash.com/@photographer — Unsplash License"
+
+Fonts & Icons:
+- lucide-react icons — Lucide Contributors (ISC)
+- System font stack — no external font license required
+
+All third-party licenses remain with their owners. See LICENSE.txt for full list.
