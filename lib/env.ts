@@ -6,13 +6,16 @@ import { z } from "zod";
  * Build is allowed with SKIP_ENV_VALIDATION=1 / placeholder values; runtime enforces strict check.
  */
 const envSchema = z.object({
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required (postgresql://...)"),
+  DATABASE_URL: z.string().url("DATABASE_URL must be a valid URL (postgresql://...)"),
   AUTH_SECRET: z
     .string()
     .min(32, "AUTH_SECRET must be >=32 chars — generate with: openssl rand -base64 32"),
   AUTH_GOOGLE_ID: z.string().min(1, "AUTH_GOOGLE_ID required"),
   AUTH_GOOGLE_SECRET: z.string().min(1, "AUTH_GOOGLE_SECRET required"),
   NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL"),
+  NEXTAUTH_SECRET: z.string().min(32, "NEXTAUTH_SECRET must be >=32 chars").optional(),
+  // Enterprise hardening — 32-byte encryption key for BYOK encryption-at-rest
+  ENCRYPTION_KEY: z.string().length(32, "ENCRYPTION_KEY must be exactly 32 characters").optional(),
   OPENAI_API_KEY: z.string().startsWith("sk-", "OPENAI_API_KEY must start with sk-"),
   STRIPE_SECRET_KEY: z.string().startsWith("sk_", "STRIPE_SECRET_KEY must start with sk_"),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_", "STRIPE_WEBHOOK_SECRET must start with whsec_"),
@@ -51,6 +54,7 @@ function hasAnyPlaceholder(env: Record<string, string | undefined>): boolean {
 }
 
 /**
+ * Hardened bootstrap — fails fast at build time when placeholders leak to production.
  * Strict validator — call at runtime entry points (API routes, lib getters).
  * Allows Next.js build with placeholders but throws loudly in production runtime.
  */

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 export default function Error({
   error,
   reset,
@@ -7,6 +9,11 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    // Enterprise observability hook — replace with Sentry/Datadog in production
+    console.error("[APP_ERROR]", error);
+  }, [error]);
+
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center p-6 text-center">
       <h2 className="text-2xl font-semibold tracking-tight">Something went wrong</h2>

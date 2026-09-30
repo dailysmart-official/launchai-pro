@@ -73,6 +73,8 @@ export const RATE_LIMITS = {
   aiGenerate: { limit: 10, windowMs: 60_000 } as RateLimitConfig, // 10/min per user
   /** Reads — generous */
   aiRead: { limit: 60, windowMs: 60_000 } as RateLimitConfig, // 60/min
+  /** Workspace mutations — hardened (spec: 20/min sliding window) */
+  workspaceWrite: { limit: 20, windowMs: 60_000 } as RateLimitConfig, // 20/min
 } as const;
 
 /** Derive limiter key from authenticated userId or IP */

@@ -57,8 +57,12 @@ export async function generateContent(userId: string, input: GenerateInput): Pro
   let content = raw;
   const titleMatch = raw.match(/^Title:\s*(.+)$/m);
   if (titleMatch) {
-    title = titleMatch[1].trim();
-    content = raw.replace(titleMatch[0], "").trim();
+    const rawTitle = titleMatch[1];
+    const fullMatch = titleMatch[0];
+    if (rawTitle && fullMatch) {
+      title = rawTitle.trim();
+      content = raw.replace(fullMatch, "").trim();
+    }
   }
 
   const tokens = completion.usage?.total_tokens ?? null;
