@@ -26,13 +26,16 @@ footer{margin-top:36px;border-top:1px solid #e2e8f0;padding-top:12px;font-size:1
 # required for next-auth beta.19 peer ^14||^15 — 476 packages, ✔ Prisma Client</code></pre>
 <h2>2. Environment Setup</h2>
 <pre><code>cp .env.example .env  # never commit .env</code></pre>
-<table><tr><th>Variable</th><th>Example</th></tr>
-<tr><td>DATABASE_URL</td><td>postgresql://user:pass@localhost:5432/launchai</td></tr>
-<tr><td>NEXTAUTH_URL</td><td>http://localhost:3000</td></tr>
-<tr><td>AUTH_SECRET</td><td>openssl rand -base64 32</td></tr>
-<tr><td>OPENAI_API_KEY</td><td>sk-...</td></tr>
-<tr><td>STRIPE_SECRET_KEY / WHSEC / PRICE_*</td><td>sk_test_... / whsec_... / price_...</td></tr>
+<table><tr><th>Variable</th><th>Example</th><th>Note</th></tr>
+<tr><td>DATABASE_URL</td><td>postgresql://user:pass@localhost:5432/launchai</td><td>Neon/Supabase pooled ?sslmode=require</td></tr>
+<tr><td>NEXTAUTH_URL</td><td>http://localhost:3000</td><td>Prod: https://launchai-pro.vercel.app — must match Google redirect URI</td></tr>
+<tr><td>AUTH_SECRET</td><td>openssl rand -base64 32</td><td>Aliases NEXTAUTH_SECRET also accepted</td></tr>
+<tr><td>AUTH_GOOGLE_ID</td><td>...apps.googleusercontent.com</td><td>Alias GOOGLE_CLIENT_ID also accepted</td></tr>
+<tr><td>AUTH_GOOGLE_SECRET</td><td>GOCSPX-...</td><td>Alias GOOGLE_CLIENT_SECRET also accepted</td></tr>
+<tr><td>OPENAI_API_KEY</td><td>sk-...</td><td></td></tr>
+<tr><td>STRIPE_SECRET_KEY / WHSEC / PRICE_*</td><td>sk_test_... / whsec_... / price_...</td><td></td></tr>
 </table>
+<div class="callout warn"><strong>Google invalid_client fix:</strong> Set <code>AUTH_GOOGLE_ID</code>+<code>AUTH_GOOGLE_SECRET</code> <em>or</em> <code>GOOGLE_CLIENT_ID</code>+<code>GOOGLE_CLIENT_SECRET</code> in Vercel env vars — code now normalizes both via <code>lib/env.ts:normalizeAliases()</code>. Google Console → APIs & Services → Credentials → OAuth Client → Authorized redirect URI must include <code>{NEXTAUTH_URL}/api/auth/callback/google</code> (e.g. <code>https://launchai-pro.vercel.app/api/auth/callback/google</code>).</div>
 <h2>3. Prisma + Supabase</h2>
 <pre><code>npx prisma generate   # ✔ v5.22.0
 npx prisma db push    # local Postgres — or Supabase: paste DATABASE_URL then db push

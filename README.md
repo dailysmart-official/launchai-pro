@@ -18,15 +18,19 @@ npm run dev                 # http://localhost:3000 — Ready ~2.6s
 npm run build && npm start  # ✔ Compiled successfully 16.2s, Linting 0 warnings
 ```
 
-## Environment
+## Environment (Auth.js v5 — Vercel exact names)
 
-| Variable | Example |
-|----------|---------|
-| `DATABASE_URL` | `postgresql://user:pass@localhost:5432/launchai` |
-| `NEXTAUTH_URL` | `http://localhost:3000` |
-| `AUTH_SECRET` | `openssl rand -base64 32` |
-| `OPENAI_API_KEY` | `sk-...` |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` / `STRIPE_PRICE_*` | `sk_test_...` / `whsec_...` / `pk_test_...` / `price_...` |
+| Variable | Example | Note |
+|----------|---------|------|
+| `DATABASE_URL` | `postgresql://user:pass@localhost:5432/launchai` | Neon/Supabase pooled `?sslmode=require` |
+| `NEXTAUTH_URL` | `http://localhost:3000` | Prod: `https://launchai-pro.vercel.app` — must match Google redirect URI |
+| `AUTH_SECRET` | `openssl rand -base64 32` | Primary; alias `NEXTAUTH_SECRET` also accepted |
+| `AUTH_GOOGLE_ID` | `...apps.googleusercontent.com` | Primary; alias `GOOGLE_CLIENT_ID` also accepted |
+| `AUTH_GOOGLE_SECRET` | `GOCSPX-...` | Primary; alias `GOOGLE_CLIENT_SECRET` also accepted |
+| `OPENAI_API_KEY` | `sk-...` | |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` / `STRIPE_PRICE_*` | `sk_test_...` / `whsec_...` / `pk_test_...` / `price_...` | |
+
+> `invalid_client` fix → set **either** `AUTH_GOOGLE_ID`+`AUTH_GOOGLE_SECRET` **or** `GOOGLE_CLIENT_ID`+`GOOGLE_CLIENT_SECRET` in Vercel — code now normalizes both via `lib/env.ts:normalizeAliases()` and `lib/auth.ts` fallbacks. Google Console redirect: `{NEXTAUTH_URL}/api/auth/callback/google`.
 
 ## Routes (verified Vercel build)
 

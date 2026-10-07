@@ -4,13 +4,26 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "./db";
 
+const googleClientId =
+  process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_ID || "";
+const googleClientSecret =
+  process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_SECRET || "";
+
+if (!googleClientId || !googleClientSecret) {
+  console.warn(
+    "[auth] Missing Google OAuth credentials — set AUTH_GOOGLE_ID/AUTH_GOOGLE_SECRET (or GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET) in Vercel. Google login will return invalid_client until configured."
+  );
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
   session: { strategy: "jwt" },
   trustHost: true,
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   providers: [
     Google({
+      clientId: googleClientId || "missing_google_client_id",
+      clientSecret: googleClientSecret || "missing_google_client_secret",
       allowDangerousEmailAccountLinking: true,
     }),
     // OWASP-compliant dev-only mock — tree-shaken in production (Vercel sets NODE_ENV=production)

@@ -58,7 +58,23 @@ function hasAnyPlaceholder(env: Record<string, string | undefined>): boolean {
  * Strict validator — call at runtime entry points (API routes, lib getters).
  * Allows Next.js build with placeholders but throws loudly in production runtime.
  */
+function normalizeAliases() {
+  // Vercel compatibility aliases — Auth.js v5 officially uses AUTH_*,
+  // but many dashboards/buyers already set GOOGLE_*/NEXTAUTH_* from older templates.
+  // Normalizing here prevents `invalid_client` when only the alias is set.
+  const e = process.env as Record<string, string | undefined>;
+  if (!e.AUTH_GOOGLE_ID && e.GOOGLE_CLIENT_ID) e.AUTH_GOOGLE_ID = e.GOOGLE_CLIENT_ID;
+  if (!e.GOOGLE_CLIENT_ID && e.AUTH_GOOGLE_ID) e.GOOGLE_CLIENT_ID = e.AUTH_GOOGLE_ID;
+  if (!e.AUTH_GOOGLE_SECRET && e.GOOGLE_CLIENT_SECRET) e.AUTH_GOOGLE_SECRET = e.GOOGLE_CLIENT_SECRET;
+  if (!e.GOOGLE_CLIENT_SECRET && e.AUTH_GOOGLE_SECRET) e.GOOGLE_CLIENT_SECRET = e.AUTH_GOOGLE_SECRET;
+  if (!e.AUTH_SECRET && e.NEXTAUTH_SECRET) e.AUTH_SECRET = e.NEXTAUTH_SECRET;
+  if (!e.NEXTAUTH_SECRET && e.AUTH_SECRET) e.NEXTAUTH_SECRET = e.AUTH_SECRET;
+  if (!e.NEXTAUTH_URL && e.AUTH_URL) e.NEXTAUTH_URL = e.AUTH_URL;
+  if (!e.AUTH_URL && e.NEXTAUTH_URL) e.AUTH_URL = e.NEXTAUTH_URL;
+}
+
 export function validateEnv(strict = false): Env {
+  normalizeAliases();
   const parsed = envSchema.safeParse(process.env);
   if (parsed.success) return parsed.data;
 
