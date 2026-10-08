@@ -4,7 +4,7 @@
 $ErrorActionPreference = "Stop"
 $ProjectRoot = "D:\projectAI\launchai-pro"
 $TempStaging = "C:\Temp\launchai-pro-zip"
-$ZipOutput = "C:\Temp\launchai-pro-v1.0-codecanyon.zip"
+$ZipOutput = "C:\Temp\launchai-pro-v1.4.0.zip"
 
 Write-Host "=== PHASE 1: DATABASE & TYPESCRIPT ===" -ForegroundColor Cyan
 Set-Location $ProjectRoot
