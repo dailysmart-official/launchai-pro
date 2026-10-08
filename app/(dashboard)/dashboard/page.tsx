@@ -11,6 +11,7 @@ import { UsageChart } from "@/features/analytics/components/usage-chart";
 import { GenerationHistory, type HistoryItem } from "@/features/analytics/components/generation-history";
 import { getUsageStats } from "@/features/analytics/actions";
 import { db, withRetry } from "@/lib/db";
+import { AiAssistantFab } from "@/components/ai-assistant-fab";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,7 @@ export default async function DashboardPage() {
       <p className="text-xs text-muted-foreground">
         Analytics range defaults to 7d — query <code className="rounded bg-muted px-1">/api/analytics/usage?range=30d</code> for 30-day view. Team & API Keys deferred to v1.3.1.
       </p>
+      <AiAssistantFab href="/dashboard/writer" />
     </div>
   );
 }
