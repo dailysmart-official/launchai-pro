@@ -1,7 +1,5 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LaunchAI Pro — Documentation</title>
-<style>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LaunchAI Pro — Documentation</title><style>
 body{font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:860px;margin:0 auto;padding:32px 24px;line-height:1.6;color:#0f172a}
 h1{font-size:26px;border-bottom:2px solid #e2e8f0;padding-bottom:10px}
 h2{font-size:19px;margin-top:32px;color:#1e293b;border-left:4px solid #0ea5e9;padding-left:10px}
@@ -16,49 +14,123 @@ th{background:#f8fafc}
 .warn{border-color:#fde68a;background:#fffbeb}
 footer{margin-top:36px;border-top:1px solid #e2e8f0;padding-top:12px;font-size:12px;color:#64748b}
 </style></head><body>
-<h1>LaunchAI Pro — Next.js 15.5 AI SaaS Boilerplate <span class="badge">Envato Clean Build</span></h1>
-<p><strong>v0.1.0</strong> · Next.js 15.5.3 · Prisma 5.22.0 · NextAuth 5.0.0-beta.19 · Stripe Ready · Tailwind</p>
-<div class="callout">
-<strong>Resilience — Offline DB Handling (OWASP):</strong> <code>lib/db.ts</code> <code>withRetry(fn,{retries:3})</code> retries only on <code>P1001/P1002/P1008</code>. If <code>DATABASE_URL</code> offline at <code>localhost:5432</code>, <code>/writer</code> shows empty <code>GenerationHistory</code> via <code>.catch(()=>[])</code> — <strong>not a crash</strong>. Production logging is <code>["error"]</code> only (no PII query logs).
-</div>
-<h2>1. Installation</h2>
-<pre><code>npm install --legacy-peer-deps
-# required for next-auth beta.19 peer ^14||^15 — 476 packages, ✔ Prisma Client</code></pre>
-<h2>2. Environment Setup</h2>
-<pre><code>cp .env.example .env  # never commit .env</code></pre>
-<table><tr><th>Variable</th><th>Example</th><th>Note</th></tr>
-<tr><td>DATABASE_URL</td><td>postgresql://user:pass@localhost:5432/launchai</td><td>Neon/Supabase pooled ?sslmode=require</td></tr>
-<tr><td>NEXTAUTH_URL</td><td>http://localhost:3000</td><td>Prod: https://launchai-pro.vercel.app — must match Google redirect URI</td></tr>
-<tr><td>AUTH_SECRET</td><td>openssl rand -base64 32</td><td>Aliases NEXTAUTH_SECRET also accepted</td></tr>
-<tr><td>AUTH_GOOGLE_ID</td><td>...apps.googleusercontent.com</td><td>Alias GOOGLE_CLIENT_ID also accepted</td></tr>
-<tr><td>AUTH_GOOGLE_SECRET</td><td>GOCSPX-...</td><td>Alias GOOGLE_CLIENT_SECRET also accepted</td></tr>
-<tr><td>OPENAI_API_KEY</td><td>sk-...</td><td></td></tr>
-<tr><td>STRIPE_SECRET_KEY / WHSEC / PRICE_*</td><td>sk_test_... / whsec_... / price_...</td><td></td></tr>
+<h1>LaunchAI Pro</h1>
+<p>Next.js 15 AI SaaS starter: Google login (Auth.js), PostgreSQL + Prisma, an OpenAI-powered AI Writer, and Stripe subscriptions.</p>
+<h2>Requirements</h2>
+<ul>
+<li>Node.js 18.18 or newer (20 LTS recommended) and npm 9+</li>
+<li>A PostgreSQL database (Neon, Supabase or local)</li>
+<li>Optional, per feature: Google OAuth client, OpenAI API key, Stripe account (see "Feature → required keys")</li>
+</ul>
+<h2>Quick start (local)</h2>
+<pre><code>npm ci
+cp .env.example .env      # Windows: copy .env.example .env
+# edit .env: set DATABASE_URL, AUTH_SECRET, NEXTAUTH_URL (see below)
+npx prisma migrate deploy
+npm run dev               # http://localhost:3000</code></pre>
+<p><code>npm ci</code> installs the exact versions in <code>package-lock.json</code> and does not need <code>--legacy-peer-deps</code>. It also runs <code>prisma generate</code> automatically.</p>
+<p>Never commit <code>.env</code>.</p>
+<h2>Environment variables</h2>
+<table>
+<tr><th>Variable</th><th>Required</th><th>What it is</th><th>Where to get it</th></tr>
+<tr><td><code>DATABASE_URL</code></td><td>Yes</td><td>PostgreSQL connection string</td><td>Neon/Supabase dashboard; add <code>?sslmode=require</code> for hosted databases</td></tr>
+<tr><td><code>AUTH_SECRET</code></td><td>Yes</td><td>Signs session tokens</td><td><code>openssl rand -base64 32</code></td></tr>
+<tr><td><code>NEXTAUTH_URL</code></td><td>Yes</td><td>Public URL of the app</td><td><code>http://localhost:3000</code> locally, your domain on Vercel</td></tr>
+<tr><td><code>AUTH_GOOGLE_ID</code></td><td>For Google login</td><td>Google OAuth client ID</td><td>Google Cloud Console → APIs &amp; Services → Credentials</td></tr>
+<tr><td><code>AUTH_GOOGLE_SECRET</code></td><td>For Google login</td><td>Google OAuth client secret</td><td>Same place</td></tr>
+<tr><td><code>OPENAI_API_KEY</code></td><td>For AI Writer</td><td>OpenAI key (<code>sk-...</code>)</td><td>platform.openai.com → API keys</td></tr>
+<tr><td><code>STRIPE_SECRET_KEY</code></td><td>For billing</td><td>Stripe secret key (<code>sk_...</code>)</td><td>Stripe Dashboard → Developers → API keys</td></tr>
+<tr><td><code>STRIPE_WEBHOOK_SECRET</code></td><td>For billing</td><td>Webhook signing secret (<code>whsec_...</code>)</td><td>Stripe Dashboard → Webhooks (or <code>stripe listen</code> locally)</td></tr>
+<tr><td><code>STRIPE_PRICE_STARTER</code></td><td>For billing</td><td>Price ID of the Starter plan (<code>price_...</code>)</td><td>Stripe Dashboard → Product catalog</td></tr>
+<tr><td><code>STRIPE_PRICE_PRO</code></td><td>For billing</td><td>Price ID of the Pro plan (<code>price_...</code>)</td><td>Same place</td></tr>
 </table>
-<div class="callout warn"><strong>Google invalid_client fix:</strong> Set <code>AUTH_GOOGLE_ID</code>+<code>AUTH_GOOGLE_SECRET</code> <em>or</em> <code>GOOGLE_CLIENT_ID</code>+<code>GOOGLE_CLIENT_SECRET</code> in Vercel env vars — code now normalizes both via <code>lib/env.ts:normalizeAliases()</code>. Google Console → APIs & Services → Credentials → OAuth Client → Authorized redirect URI must include <code>{NEXTAUTH_URL}/api/auth/callback/google</code> (e.g. <code>https://launchai-pro.vercel.app/api/auth/callback/google</code>).</div>
-<h2>3. Prisma + Supabase</h2>
-<pre><code>npx prisma generate   # ✔ v5.22.0
-npx prisma db push    # local Postgres — or Supabase: paste DATABASE_URL then db push
-npm run db:seed       # seeds dev@launchai.pro / dev1234 (dev only)
-npx prisma studio</code></pre>
-<h2>4. Run</h2>
-<pre><code>npm run dev                  # http://localhost:3000 — Ready ~2.6s
-npm run build && npm start   # ✔ Compiled successfully (9/9) 0 warnings
-npm run lint                 # ✔ No ESLint warnings</code></pre>
-<p>Routes: <code>/</code> 170B · <code>/login</code> 3.27kB · <code>/writer</code> 33.1kB dynamic · <code>/billing</code> 170B · <code>/api/*</code> 134B each</p>
-<div class="callout warn"><strong>Dev warning (cosmetic):</strong> <code>headers().get should be awaited</code> comes from inside next-auth beta.19 — build is 0 warnings. Fixed in beta.25 (next@16).</div>
-<h2>5. Hardened lib/db.ts (53 lines)</h2>
-<pre><code>createPrismaClient() { log: dev ["error","warn"] / prod ["error"] }
-globalForPrisma singleton + withRetry only P1001/P1002/P1008 + export default db</code></pre>
-<h2>6. Billing — Demo UI Notice</h2>
-<div class="callout"><strong style="background:#e0f2fe;padding:2px 8px;border-radius:999px">Demo UI — Connect Stripe Keys to Activate</strong> — <code>/billing</code> is a responsive placeholder. No charge without <code>STRIPE_SECRET_KEY</code>. Wire <code>lib/stripe.ts</code> + <code>STRIPE_PRICE_*</code>. Test webhook: <code>stripe listen --forward-to localhost:3000/api/webhooks/stripe</code></div>
-<h2>7. Structure</h2>
-<pre><code>app/(dashboard)/writer billing dashboard teams — api/ai/generate [id] auth webhooks/stripe
-components/ui badge button card ... — lib/db auth stripe openai — modules/ai-writer
-prisma/schema.prisma — public/ — LICENSE.txt Credits.txt — documentation/Documentation.html</code></pre>
-<h2>8. Support</h2>
-<p>6 months included via Envato. 12-month extension @ $19.50. Customization quoted separately.</p>
-<p>Pricing for author: Regular $59 launch → $69 after 30 sales — Extended $249</p>
-<footer>
-<p><strong>Disclaimer:</strong> Not affiliated with OpenAI Inc. or Stripe Inc. OpenAI/Stripe/Supabase are BYOK services requiring buyer's own keys and ToS. See LICENSE.txt / Credits.txt. Build verified on C: NTFS — D: FAT32 EPERM bypassed.</p>
-</footer></body></html>
+<p>Accepted aliases, useful when a host already defines them: <code>GOOGLE_CLIENT_ID</code> / <code>GOOGLE_CLIENT_SECRET</code> (for <code>AUTH_GOOGLE_ID</code> / <code>AUTH_GOOGLE_SECRET</code>), <code>NEXTAUTH_SECRET</code> (for <code>AUTH_SECRET</code>). Set either name, not both.</p>
+<h2>Feature → required keys</h2>
+<table>
+<tr><th>Feature</th><th>Needs</th></tr>
+<tr><td>Pages <code>/</code>, <code>/pricing</code>, <code>/login</code>, <code>/register</code></td><td><code>DATABASE_URL</code>, <code>AUTH_SECRET</code>, <code>NEXTAUTH_URL</code></td></tr>
+<tr><td>Dev login (local only)</td><td>the three above, <code>npm run dev</code></td></tr>
+<tr><td>Google login</td><td><code>AUTH_GOOGLE_ID</code>, <code>AUTH_GOOGLE_SECRET</code></td></tr>
+<tr><td>AI Writer (<code>/writer</code>, history, <code>/api/ai/generate</code>)</td><td>login, <code>DATABASE_URL</code>, <code>OPENAI_API_KEY</code></td></tr>
+<tr><td>Billing (<code>/billing</code>, checkout)</td><td><code>STRIPE_SECRET_KEY</code>, <code>STRIPE_PRICE_STARTER</code>, <code>STRIPE_PRICE_PRO</code></td></tr>
+<tr><td>Subscription sync (webhook)</td><td><code>STRIPE_SECRET_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code></td></tr>
+</table>
+<p>Without <code>OPENAI_API_KEY</code> the AI Writer returns HTTP 503 with the message "OPENAI_API_KEY is not configured". Without Stripe keys, checkout in development redirects to the dashboard with a mock success; in production it shows "Billing is not configured".</p>
+<h2>Database setup (Neon / PostgreSQL)</h2>
+<ol start="1">
+<li>Create a project at neon.tech (or any PostgreSQL provider) and copy the connection string.</li>
+<li>Put it in <code>.env</code> as <code>DATABASE_URL</code>.</li>
+<li>Create the tables:</li>
+</ol>
+<pre><code>npx prisma migrate deploy</code></pre>
+<p>This applies the migration in <code>prisma/migrations/</code>. Use <code>npm run db:studio</code> to browse the data.</p>
+<p><strong>Existing database created earlier with <code>prisma db push</code>?</strong> Mark the initial migration as applied once, instead of running <code>migrate deploy</code>:</p>
+<pre><code>npx prisma migrate resolve --applied 20261010000000_init</code></pre>
+<p><strong>Neon users:</strong> run <code>prisma migrate</code> commands with Neon's *direct* connection string (the host without <code>-pooler</code>). Pooled connections can hold Prisma's migration lock or keep stale session settings and cause "advisory lock" timeouts. The pooled string is fine for the running app, so you can use the pooled URL in Vercel and the direct one only on your computer when migrating.</p>
+<p>If you change <code>prisma/schema.prisma</code>, create a new migration with <code>npx prisma migrate dev --name your_change</code> against a development database. Do not run <code>migrate dev</code> against production.</p>
+<h2>Dev login (development only)</h2>
+<p>When started with <code>npm run dev</code>, the login page offers a "Dev Login" form so you can try the app without Google keys:</p>
+<ul>
+<li>Email: <code>dev@launchai.pro</code></li>
+<li>Password: <code>dev1234</code></li>
+</ul>
+<p>On first login this creates a matching user row in the database. The provider is only registered when <code>NODE_ENV</code> is <code>development</code>, so it is not available in <code>npm run build &amp;&amp; npm start</code> or on Vercel. Change or remove it in <code>lib/auth.ts</code> if you ship a fork.</p>
+<h2>Google OAuth</h2>
+<ol start="1">
+<li>Google Cloud Console → APIs &amp; Services → Credentials → Create credentials → OAuth client ID → Web application.</li>
+<li>Authorized redirect URIs, add both:<ul><li><code>http://localhost:3000/api/auth/callback/google</code></li><li><code>https://YOUR-DOMAIN/api/auth/callback/google</code> (for example <code>https://your-app.vercel.app/api/auth/callback/google</code>)</li></ul></li>
+<li>Copy the client ID and secret into <code>AUTH_GOOGLE_ID</code> and <code>AUTH_GOOGLE_SECRET</code>.</li>
+<li><code>NEXTAUTH_URL</code> must match the domain you are opening. <code>invalid_client</code> means the ID or secret is missing or wrong; <code>redirect_uri_mismatch</code> means the URI above is not registered.</li>
+</ol>
+<h2>Stripe</h2>
+<ol start="1">
+<li>Create two recurring prices in Stripe (Starter and Pro) and put their IDs in <code>STRIPE_PRICE_STARTER</code> and <code>STRIPE_PRICE_PRO</code>.</li>
+<li>Put your secret key in <code>STRIPE_SECRET_KEY</code>. Use test keys (<code>sk_test_...</code>) until you are ready to go live.</li>
+<li>Webhook endpoint: <code>https://YOUR-DOMAIN/api/webhooks/stripe</code>. Subscribe to these events:<ul><li><code>checkout.session.completed</code></li><li><code>customer.subscription.updated</code></li><li><code>customer.subscription.deleted</code></li></ul></li>
+<li>Copy the endpoint's signing secret into <code>STRIPE_WEBHOOK_SECRET</code>.</li>
+<li>Local testing with the Stripe CLI:</li>
+</ol>
+<pre><code>stripe listen --forward-to localhost:3000/api/webhooks/stripe</code></pre>
+<p>The CLI prints a <code>whsec_...</code> secret; use it as <code>STRIPE_WEBHOOK_SECRET</code> locally.</p>
+<h2>Deploy to Vercel</h2>
+<ol start="1">
+<li>Push the project to a Git repository and import it in Vercel (framework: Next.js; defaults are fine).</li>
+<li>In Project Settings → Environment Variables, add every variable you need from the table above. Set <code>NEXTAUTH_URL</code> to your production URL.</li>
+<li>Create the database tables once, from your computer, with <code>DATABASE_URL</code> pointing at the production database:</li>
+</ol>
+<pre><code>npx prisma migrate deploy</code></pre>
+<ol start="4">
+<li>Deploy. Vercel runs <code>npm install</code>, which triggers <code>prisma generate</code>, then <code>next build</code>.</li>
+<li>Add the production redirect URI in Google Cloud and the production webhook in Stripe (sections above).</li>
+</ol>
+<h2>Scripts</h2>
+<table>
+<tr><th>Command</th><th>Purpose</th></tr>
+<tr><td><code>npm run dev</code></td><td>Development server</td></tr>
+<tr><td><code>npm run build</code> / <code>npm start</code></td><td>Production build / server</td></tr>
+<tr><td><code>npm run lint</code></td><td>ESLint</td></tr>
+<tr><td><code>npm run db:migrate</code></td><td><code>prisma migrate deploy</code></td></tr>
+<tr><td><code>npm run db:push</code></td><td><code>prisma db push</code> (prototyping only)</td></tr>
+<tr><td><code>npm run db:studio</code></td><td>Prisma Studio</td></tr>
+</table>
+<h2>Project structure</h2>
+<pre><code>app/            Routes: (marketing), (auth), (dashboard), api/
+components/     UI components
+features/       Billing, team, analytics logic
+modules/        AI Writer service and UI
+lib/            auth, db, openai, stripe, env helpers
+prisma/         schema.prisma and migrations/
+documentation/  Documentation.html (same content as this file)</code></pre>
+<h2>Troubleshooting</h2>
+<ul>
+<li><strong>Build prints "[auth] Missing Google OAuth credentials"</strong>: a warning only; set the Google variables to remove it.</li>
+<li><strong><code>/writer</code> redirects to <code>/login</code></strong>: expected when signed out.</li>
+<li><strong>Dev console shows "headers() should be awaited" errors</strong>: a known warning from <code>next-auth</code> 5.0.0-beta.19 in development only; the pages still work and it does not occur in production builds.</li>
+<li><strong>"Timed out trying to acquire a postgres advisory lock"</strong>: use the direct (non-pooler) database URL for <code>prisma migrate</code>, see "Database setup".</li>
+<li><strong><code>P3005 The database schema is not empty</code></strong>: the database was created with <code>db push</code>; run the <code>migrate resolve --applied</code> command from "Database setup" once.</li>
+<li><strong>Database errors on first load</strong>: run <code>npx prisma migrate deploy</code> and check <code>DATABASE_URL</code>.</li>
+<li><strong>AI Writer returns 503</strong>: <code>OPENAI_API_KEY</code> is missing.</li>
+</ul>
+<h2>License and credits</h2>
+<p>See <code>LICENSE.txt</code> and <code>Credits.txt</code>. You bring your own OpenAI, Stripe and database accounts; this product is not affiliated with them.</p>
+</body></html>

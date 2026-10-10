@@ -11,7 +11,7 @@ export default async function BillingPage() {
   const session = await auth();
   if (!(session?.user as { id?: string } | undefined)?.id) redirect("/login");
 
-  // Envato Note: Dummy pricing template — no live charge without STRIPE_SECRET_KEY
+  // Demo pricing template — no live charge without STRIPE_SECRET_KEY
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
       <div className="space-y-2">

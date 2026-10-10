@@ -5,9 +5,9 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "./db";
 
 const googleClientId =
-  process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_ID || "";
+  process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID || "";
 const googleClientSecret =
-  process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_SECRET || "";
+  process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET || "";
 
 if (!googleClientId || !googleClientSecret) {
   console.warn(
@@ -41,7 +41,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               const email = (credentials?.email as string)?.trim().toLowerCase();
               const password = credentials?.password as string;
               if (email === "dev@launchai.pro" && password === "dev1234") {
-                return { id: "dev-user-1", name: "Dev User", email: "dev@launchai.pro" };
+                // Persist the dev user so AIGeneration/Subscription foreign keys resolve.
+                const user = await db.user.upsert({
+                  where: { email: "dev@launchai.pro" },
+                  update: {},
+                  create: { name: "Dev User", email: "dev@launchai.pro" },
+                });
+                return { id: user.id, name: user.name, email: user.email };
               }
               return null;
             },
