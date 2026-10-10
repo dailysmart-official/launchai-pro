@@ -1,4 +1,4 @@
-import { getOpenAI } from "@/lib/openai";
+import { getOpenAI, getAiModel } from "@/lib/openai";
 import { db } from "@/lib/db";
 import { MODEL_CONFIG, SYSTEM_PROMPTS } from "./config";
 import type { GenerateInput, WriterTone, WriterType } from "@/lib/validations/ai-writer";
@@ -40,7 +40,7 @@ export async function generateContent(userId: string, input: GenerateInput): Pro
   const userPrompt = `Tone: ${input.tone}\nLanguage: ${input.language}\nType: ${input.type}\nBrief:\n${input.prompt}\n\nWrite the content now. Start with a compelling title on the first line prefixed with "Title: ".`;
 
   const completion = await openai.chat.completions.create({
-    model: MODEL_CONFIG.model,
+    model: getAiModel(),
     temperature: MODEL_CONFIG.temperature,
     max_tokens: MODEL_CONFIG.maxTokens,
     messages: [

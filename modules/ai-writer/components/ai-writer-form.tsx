@@ -10,7 +10,7 @@ import { Loader2, Sparkles, Copy, Check } from "lucide-react";
 
 type GenerateResponse = { id: string; result: string; title?: string | null };
 
-export default function AIWriterForm() {
+export default function AIWriterForm({ aiConfigured = true }: { aiConfigured?: boolean }) {
   const [prompt, setPrompt] = React.useState("");
   const [tone, setTone] = React.useState("professional");
   const [type, setType] = React.useState("blog-post");
@@ -29,6 +29,7 @@ export default function AIWriterForm() {
         body: JSON.stringify({ prompt, tone, type, language }),
       });
       const data = await res.json();
+      if (res.status === 503) throw new Error("AI generation needs an API key. See README.");
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
       setResult(data);
     } catch (err: unknown) {
@@ -79,8 +80,9 @@ export default function AIWriterForm() {
                 </Select>
               </div>
             </div>
+            {!aiConfigured && <p role="status" className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">AI generation needs an API key. See README.</p>}
             {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-            <Button type="submit" disabled={loading || prompt.length < 10} className="w-full">
+            <Button type="submit" disabled={loading || !aiConfigured || prompt.length < 10} className="w-full">
               {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="mr-2 h-4 w-4" /> Generate</>}
             </Button>
           </form>

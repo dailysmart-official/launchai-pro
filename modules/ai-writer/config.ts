@@ -35,7 +35,7 @@ export const LANGUAGE_OPTIONS = [
 ] as const;
 
 export const MODEL_CONFIG = {
-  model: "gpt-4o-mini" as const,
+  model: "gpt-4o-mini", // default; override with the AI_MODEL env var
   temperature: 0.7,
   maxTokens: 2000,
 } as const;

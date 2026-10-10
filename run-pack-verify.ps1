@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 $ProjectRoot = "C:\projects\launchai-pro"
 $TempStaging = "C:\Temp\launchai-pro-zip"
-$ZipOutput = "C:\Temp\launchai-pro-v1.4.2.zip"
+$ZipOutput = "C:\Temp\launchai-pro-v1.4.3.zip"
 
 Write-Host "=== STAGING ===" -ForegroundColor Cyan
 if (Test-Path $TempStaging) { Remove-Item -Recurse -Force $TempStaging }
@@ -26,7 +26,21 @@ if (Test-Path "$TempStaging\.env") { throw ".env leaked into staging" } else { W
 if (-not (Test-Path "$TempStaging\.env.example")) { throw ".env.example missing" }
 
 Write-Host "=== ZIP ===" -ForegroundColor Cyan
-Compress-Archive -Path "$TempStaging\*" -DestinationPath $ZipOutput -Force
+# Build the zip with .NET and forward-slash entry paths. Compress-Archive on
+# Windows PowerShell 5.1 writes backslash separators, which extract incorrectly
+# on macOS/Linux.
+Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+$zipStream = [System.IO.File]::Open($ZipOutput, [System.IO.FileMode]::CreateNew)
+$zipArchive = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create)
+Get-ChildItem -LiteralPath $TempStaging -Recurse -File | ForEach-Object {
+    $rel = $_.FullName.Substring($TempStaging.Length).TrimStart('\', '/') -replace '\\', '/'
+    $entry = $zipArchive.CreateEntry($rel, [System.IO.Compression.CompressionLevel]::Optimal)
+    $src = [System.IO.File]::OpenRead($_.FullName)
+    $dst = $entry.Open()
+    try { $src.CopyTo($dst) } finally { $dst.Dispose(); $src.Dispose() }
+}
+$zipArchive.Dispose()
+$zipStream.Dispose()
 $zipBytes = (Get-Item $ZipOutput).Length
 Write-Host "ZIP $ZipOutput $([math]::Round($zipBytes/1MB,2)) MB ($zipBytes bytes)" -ForegroundColor Green
 

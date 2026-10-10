@@ -31,7 +31,9 @@ Never commit `.env`.
 | `NEXTAUTH_URL` | Yes | Public URL of the app | `http://localhost:3000` locally, your domain on Vercel |
 | `AUTH_GOOGLE_ID` | For Google login | Google OAuth client ID | Google Cloud Console → APIs & Services → Credentials |
 | `AUTH_GOOGLE_SECRET` | For Google login | Google OAuth client secret | Same place |
-| `OPENAI_API_KEY` | For AI Writer | OpenAI key (`sk-...`) | platform.openai.com → API keys |
+| `OPENAI_API_KEY` | For AI Writer | API key for OpenAI or any OpenAI-compatible provider | platform.openai.com → API keys, or your provider's dashboard (e.g. openrouter.ai/keys) |
+| `OPENAI_BASE_URL` | No | API base URL. Leave empty for OpenAI | Your provider's docs, e.g. `https://openrouter.ai/api/v1` |
+| `AI_MODEL` | No | Model name sent to the provider. Default `gpt-4o-mini` | Your provider's model list, e.g. `openai/gpt-4o-mini` on OpenRouter |
 | `STRIPE_SECRET_KEY` | For billing | Stripe secret key (`sk_...`) | Stripe Dashboard → Developers → API keys |
 | `STRIPE_WEBHOOK_SECRET` | For billing | Webhook signing secret (`whsec_...`) | Stripe Dashboard → Webhooks (or `stripe listen` locally) |
 | `STRIPE_PRICE_STARTER` | For billing | Price ID of the Starter plan (`price_...`) | Stripe Dashboard → Product catalog |
@@ -50,7 +52,19 @@ Accepted aliases, useful when a host already defines them: `GOOGLE_CLIENT_ID` / 
 | Billing (`/billing`, checkout) | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO` |
 | Subscription sync (webhook) | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` |
 
-Without `OPENAI_API_KEY` the AI Writer returns HTTP 503 with the message "OPENAI_API_KEY is not configured". Without Stripe keys, checkout in development redirects to the dashboard with a mock success; in production it shows "Billing is not configured".
+Without `OPENAI_API_KEY` the `/writer` page shows the notice "AI generation needs an API key. See README." and disables the Generate button; the API returns HTTP 503. Without Stripe keys, checkout in development redirects to the dashboard with a mock success; in production it shows "Billing is not configured".
+
+## Using another AI provider (OpenRouter and others)
+
+The AI Writer uses the OpenAI SDK, so it works with any OpenAI-compatible provider. Set the key, the base URL and a model name from that provider. Example for OpenRouter:
+
+```
+OPENAI_API_KEY="sk-or-..."
+OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+AI_MODEL="openai/gpt-4o-mini"
+```
+
+Leave `OPENAI_BASE_URL` and `AI_MODEL` empty to use OpenAI with `gpt-4o-mini`. Restart the server after changing them.
 
 ## Database setup (Neon / PostgreSQL)
 
@@ -153,7 +167,8 @@ documentation/  Documentation.html (same content as this file)
 - **"Timed out trying to acquire a postgres advisory lock"**: use the direct (non-pooler) database URL for `prisma migrate`, see "Database setup".
 - **`P3005 The database schema is not empty`**: the database was created with `db push`; run the `migrate resolve --applied` command from "Database setup" once.
 - **Database errors on first load**: run `npx prisma migrate deploy` and check `DATABASE_URL`.
-- **AI Writer returns 503**: `OPENAI_API_KEY` is missing.
+- **AI Writer shows "needs an API key" or returns 503**: `OPENAI_API_KEY` is missing.
+- **AI Writer returns 401/404 from your provider**: check that `OPENAI_BASE_URL` and `AI_MODEL` match your provider (see "Using another AI provider").
 
 ## License and credits
 

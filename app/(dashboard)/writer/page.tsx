@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db, withRetry } from "@/lib/db";
+import { isAiConfigured } from "@/lib/openai";
 import AIWriterForm from "@/modules/ai-writer/components/ai-writer-form";
 import GenerationHistory from "@/modules/ai-writer/components/generation-history";
 
@@ -34,7 +35,7 @@ export default async function WriterPage() {
         <h1 className="text-3xl font-bold tracking-tight">AI Writer</h1>
         <p className="text-muted-foreground">Generate high-converting copy in seconds.</p>
       </div>
-      <AIWriterForm />
+      <AIWriterForm aiConfigured={isAiConfigured()} />
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Recent Generations</h2>
         <GenerationHistory initial={serialized} />

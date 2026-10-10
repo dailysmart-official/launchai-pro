@@ -4,7 +4,7 @@
 $ErrorActionPreference = "Stop"
 $ProjectRoot = "C:\projects\launchai-pro"
 $TempStaging = "C:\Temp\launchai-pro-zip"
-$ZipOutput = "C:\Temp\launchai-pro-v1.4.2.zip"
+$ZipOutput = "C:\Temp\launchai-pro-v1.4.3.zip"
 
 Write-Host "=== PHASE 1: DATABASE & TYPESCRIPT ===" -ForegroundColor Cyan
 Set-Location $ProjectRoot
@@ -77,7 +77,21 @@ if ($LASTEXITCODE -ge 8) { throw "robocopy failed: $LASTEXITCODE" }
 if (-not (Test-Path "$TempStaging\.env.example")) { throw ".env.example missing" }
 if (Test-Path "$TempStaging\.env") { throw ".env leaked into package" }
 if (-not (Test-Path "$TempStaging\prisma\schema.prisma")) { throw "prisma/schema.prisma missing" }
-Compress-Archive -Path "$TempStaging\*" -DestinationPath $ZipOutput -Force
+# Build the zip with .NET and forward-slash entry paths. Compress-Archive on
+# Windows PowerShell 5.1 writes backslash separators, which extract incorrectly
+# on macOS/Linux.
+Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+$zipStream = [System.IO.File]::Open($ZipOutput, [System.IO.FileMode]::CreateNew)
+$zipArchive = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create)
+Get-ChildItem -LiteralPath $TempStaging -Recurse -File | ForEach-Object {
+    $rel = $_.FullName.Substring($TempStaging.Length).TrimStart('\', '/') -replace '\\', '/'
+    $entry = $zipArchive.CreateEntry($rel, [System.IO.Compression.CompressionLevel]::Optimal)
+    $src = [System.IO.File]::OpenRead($_.FullName)
+    $dst = $entry.Open()
+    try { $src.CopyTo($dst) } finally { $dst.Dispose(); $src.Dispose() }
+}
+$zipArchive.Dispose()
+$zipStream.Dispose()
 $zipSize = (Get-Item $ZipOutput).Length / 1MB
 $stagedSize = (Get-ChildItem $TempStaging -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
 $zipMb = [math]::Round($zipSize, 2)
@@ -87,6 +101,11 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $entries = [System.IO.Compression.ZipFile]::OpenRead($ZipOutput).Entries | ForEach-Object { $_.FullName }
 if ($entries -match '\.env$') { throw ".env found inside zip" }
 Write-Host "Verified: .env NOT in zip" -ForegroundColor Green
+$backslashed = @($entries | Where-Object { $_ -match '\\' })
+if ($backslashed.Count -gt 0) { throw "Backslash paths in zip (must be forward-slash): $($backslashed[0])" }
+Write-Host "Verified: all $($entries.Count) entries use forward-slash paths" -ForegroundColor Green
+if (@($entries | Where-Object { $_ -match '(^|/)(node_modules|\.next)(/|$)' }).Count -gt 0) { throw "node_modules/.next found inside zip" }
+Write-Host "Verified: no node_modules/.next in zip" -ForegroundColor Green
 
 Write-Host "=== HARDENING COMPLETE - READY FOR CODECANYON ===" -ForegroundColor Green
 Write-Host "Archive: $ZipOutput"

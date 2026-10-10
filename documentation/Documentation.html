@@ -38,7 +38,9 @@ npm run dev               # http://localhost:3000</code></pre>
 <tr><td><code>NEXTAUTH_URL</code></td><td>Yes</td><td>Public URL of the app</td><td><code>http://localhost:3000</code> locally, your domain on Vercel</td></tr>
 <tr><td><code>AUTH_GOOGLE_ID</code></td><td>For Google login</td><td>Google OAuth client ID</td><td>Google Cloud Console → APIs &amp; Services → Credentials</td></tr>
 <tr><td><code>AUTH_GOOGLE_SECRET</code></td><td>For Google login</td><td>Google OAuth client secret</td><td>Same place</td></tr>
-<tr><td><code>OPENAI_API_KEY</code></td><td>For AI Writer</td><td>OpenAI key (<code>sk-...</code>)</td><td>platform.openai.com → API keys</td></tr>
+<tr><td><code>OPENAI_API_KEY</code></td><td>For AI Writer</td><td>API key for OpenAI or any OpenAI-compatible provider</td><td>platform.openai.com → API keys, or your provider's dashboard (e.g. openrouter.ai/keys)</td></tr>
+<tr><td><code>OPENAI_BASE_URL</code></td><td>No</td><td>API base URL. Leave empty for OpenAI</td><td>Your provider's docs, e.g. <code>https://openrouter.ai/api/v1</code></td></tr>
+<tr><td><code>AI_MODEL</code></td><td>No</td><td>Model name sent to the provider. Default <code>gpt-4o-mini</code></td><td>Your provider's model list, e.g. <code>openai/gpt-4o-mini</code> on OpenRouter</td></tr>
 <tr><td><code>STRIPE_SECRET_KEY</code></td><td>For billing</td><td>Stripe secret key (<code>sk_...</code>)</td><td>Stripe Dashboard → Developers → API keys</td></tr>
 <tr><td><code>STRIPE_WEBHOOK_SECRET</code></td><td>For billing</td><td>Webhook signing secret (<code>whsec_...</code>)</td><td>Stripe Dashboard → Webhooks (or <code>stripe listen</code> locally)</td></tr>
 <tr><td><code>STRIPE_PRICE_STARTER</code></td><td>For billing</td><td>Price ID of the Starter plan (<code>price_...</code>)</td><td>Stripe Dashboard → Product catalog</td></tr>
@@ -55,7 +57,13 @@ npm run dev               # http://localhost:3000</code></pre>
 <tr><td>Billing (<code>/billing</code>, checkout)</td><td><code>STRIPE_SECRET_KEY</code>, <code>STRIPE_PRICE_STARTER</code>, <code>STRIPE_PRICE_PRO</code></td></tr>
 <tr><td>Subscription sync (webhook)</td><td><code>STRIPE_SECRET_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code></td></tr>
 </table>
-<p>Without <code>OPENAI_API_KEY</code> the AI Writer returns HTTP 503 with the message "OPENAI_API_KEY is not configured". Without Stripe keys, checkout in development redirects to the dashboard with a mock success; in production it shows "Billing is not configured".</p>
+<p>Without <code>OPENAI_API_KEY</code> the <code>/writer</code> page shows the notice "AI generation needs an API key. See README." and disables the Generate button; the API returns HTTP 503. Without Stripe keys, checkout in development redirects to the dashboard with a mock success; in production it shows "Billing is not configured".</p>
+<h2>Using another AI provider (OpenRouter and others)</h2>
+<p>The AI Writer uses the OpenAI SDK, so it works with any OpenAI-compatible provider. Set the key, the base URL and a model name from that provider. Example for OpenRouter:</p>
+<pre><code>OPENAI_API_KEY="sk-or-..."
+OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+AI_MODEL="openai/gpt-4o-mini"</code></pre>
+<p>Leave <code>OPENAI_BASE_URL</code> and <code>AI_MODEL</code> empty to use OpenAI with <code>gpt-4o-mini</code>. Restart the server after changing them.</p>
 <h2>Database setup (Neon / PostgreSQL)</h2>
 <ol start="1">
 <li>Create a project at neon.tech (or any PostgreSQL provider) and copy the connection string.</li>
@@ -129,7 +137,8 @@ documentation/  Documentation.html (same content as this file)</code></pre>
 <li><strong>"Timed out trying to acquire a postgres advisory lock"</strong>: use the direct (non-pooler) database URL for <code>prisma migrate</code>, see "Database setup".</li>
 <li><strong><code>P3005 The database schema is not empty</code></strong>: the database was created with <code>db push</code>; run the <code>migrate resolve --applied</code> command from "Database setup" once.</li>
 <li><strong>Database errors on first load</strong>: run <code>npx prisma migrate deploy</code> and check <code>DATABASE_URL</code>.</li>
-<li><strong>AI Writer returns 503</strong>: <code>OPENAI_API_KEY</code> is missing.</li>
+<li><strong>AI Writer shows "needs an API key" or returns 503</strong>: <code>OPENAI_API_KEY</code> is missing.</li>
+<li><strong>AI Writer returns 401/404 from your provider</strong>: check that <code>OPENAI_BASE_URL</code> and <code>AI_MODEL</code> match your provider (see "Using another AI provider").</li>
 </ul>
 <h2>License and credits</h2>
 <p>See <code>LICENSE.txt</code> and <code>Credits.txt</code>. You bring your own OpenAI, Stripe and database accounts; this product is not affiliated with them.</p>

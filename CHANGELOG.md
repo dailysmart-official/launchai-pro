@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.3
+
+### Added
+- `OPENAI_BASE_URL` and `AI_MODEL` (both optional) so the AI Writer works with any OpenAI-compatible provider, for example OpenRouter. Defaults: official OpenAI endpoint and `gpt-4o-mini`.
+- `/writer` shows "AI generation needs an API key. See README." and disables Generate when no key is configured, instead of a raw error.
+- README and documentation: environment table entries and a "Using another AI provider" section with an OpenRouter example.
+
 ## 1.4.2
 
 ### Security
