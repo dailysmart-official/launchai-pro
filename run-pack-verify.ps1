@@ -1,14 +1,14 @@
 $ErrorActionPreference = "Stop"
-$ProjectRoot = "D:\projectAI\launchai-pro"
+$ProjectRoot = "C:\projects\launchai-pro"
 $TempStaging = "C:\Temp\launchai-pro-zip"
-$ZipOutput = "C:\Temp\launchai-pro-v1.4.0.zip"
+$ZipOutput = "C:\Temp\launchai-pro-v1.4.2.zip"
 
 Write-Host "=== STAGING ===" -ForegroundColor Cyan
 if (Test-Path $TempStaging) { Remove-Item -Recurse -Force $TempStaging }
 if (Test-Path $ZipOutput) { Remove-Item -Force $ZipOutput }
 New-Item -ItemType Directory -Force -Path $TempStaging | Out-Null
 
-robocopy $ProjectRoot $TempStaging /E /XD node_modules .next .git .turbo .vercel /XF .env .env.local .env.development.local .env.production.local *.log tsconfig.tsbuildinfo /NFL /NDL /NJH /NJS /NC /NS
+robocopy $ProjectRoot $TempStaging /E /XD content-engine node_modules .next .git .turbo .vercel /XF harden-and-package.ps1 run-pack-verify.ps1 .env .env.local .env.development.local .env.production.local *.log tsconfig.tsbuildinfo /NFL /NDL /NJH /NJS /NC /NS
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed: $LASTEXITCODE" }
 Write-Host "robocopy OK code $LASTEXITCODE" -ForegroundColor Green
 

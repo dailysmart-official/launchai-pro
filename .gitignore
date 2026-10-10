@@ -42,3 +42,4 @@ desktop.ini
 # Misc
 coverage
 .nyc_output
+content-engine/

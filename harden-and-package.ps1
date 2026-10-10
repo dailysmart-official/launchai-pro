@@ -2,9 +2,9 @@
 # Certified from C:\Users\yassine\launchai-pro (audit PASS 3/3) -> D:\projectAI\launchai-pro
 # Run as: powershell -ExecutionPolicy Bypass -File ./harden-and-package.ps1
 $ErrorActionPreference = "Stop"
-$ProjectRoot = "D:\projectAI\launchai-pro"
+$ProjectRoot = "C:\projects\launchai-pro"
 $TempStaging = "C:\Temp\launchai-pro-zip"
-$ZipOutput = "C:\Temp\launchai-pro-v1.4.0.zip"
+$ZipOutput = "C:\Temp\launchai-pro-v1.4.2.zip"
 
 Write-Host "=== PHASE 1: DATABASE & TYPESCRIPT ===" -ForegroundColor Cyan
 Set-Location $ProjectRoot
@@ -45,7 +45,7 @@ if ($secrets) { throw "Hardcoded live secrets found" }
 Write-Host "No hardcoded live secrets" -ForegroundColor Green
 
 Write-Host "[2.2] Hardened modules..." -ForegroundColor Yellow
-$required = @("lib\env.ts","lib\rate-limit.ts","lib\stripe.ts","lib\openai.ts","next.config.mjs","app\api\ai\generate\route.ts","app\api\ai\generate\[id]\route.ts","app\api\webhooks\stripe\route.ts")
+$required = @("lib\rate-limit.ts","lib\stripe.ts","lib\openai.ts","next.config.mjs","app\api\ai\generate\route.ts","app\api\ai\generate\[id]\route.ts","app\api\webhooks\stripe\route.ts")
 foreach ($f in $required) {
     $p = Join-Path $ProjectRoot $f
     if (-not (Test-Path -LiteralPath $p)) { throw "MISSING: $f" }
@@ -60,8 +60,7 @@ Write-Host "[3.1] Cleaning cache..." -ForegroundColor Yellow
 Remove-Item -Recurse -Force "$ProjectRoot\.next", "$ProjectRoot\tsconfig.tsbuildinfo", "$ProjectRoot\.turbo" -ErrorAction SilentlyContinue
 Write-Host "Cache cleaned" -ForegroundColor Green
 
-Write-Host "[3.2] Production Build [SKIP_ENV_VALIDATION=1]..." -ForegroundColor Yellow
-$env:SKIP_ENV_VALIDATION = "1"
+Write-Host "[3.2] Production Build..." -ForegroundColor Yellow
 if ((Test-Path "$ProjectRoot\node_modules\next\dist\bin\next") -or (Test-Path "$ProjectRoot\node_modules\.bin\next.cmd")) {
   npm run build
   if ($LASTEXITCODE -ne 0) { Write-Host "npm run build FAILED - continuing to package (Vercel will build on push)" -ForegroundColor Yellow } else { Write-Host "Build successful (10 routes)" -ForegroundColor Green }
@@ -73,7 +72,7 @@ Write-Host "[3.3] Packaging CodeCanyon archive..." -ForegroundColor Yellow
 if (Test-Path $TempStaging) { Remove-Item -Recurse -Force $TempStaging }
 if (Test-Path $ZipOutput) { Remove-Item -Force $ZipOutput }
 New-Item -ItemType Directory -Force -Path $TempStaging | Out-Null
-robocopy $ProjectRoot $TempStaging /E /XD node_modules .next .git .turbo .vercel /XF .env .env.local .env.development.local .env.production.local *.log tsconfig.tsbuildinfo /NFL /NDL /NJH /NJS /NC /NS
+robocopy $ProjectRoot $TempStaging /E /XD content-engine node_modules .next .git .turbo .vercel /XF harden-and-package.ps1 run-pack-verify.ps1 .env .env.local .env.development.local .env.production.local *.log tsconfig.tsbuildinfo /NFL /NDL /NJH /NJS /NC /NS
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed: $LASTEXITCODE" }
 if (-not (Test-Path "$TempStaging\.env.example")) { throw ".env.example missing" }
 if (Test-Path "$TempStaging\.env") { throw ".env leaked into package" }
