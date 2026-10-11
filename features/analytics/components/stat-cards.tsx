@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreditMeter } from "@/features/billing/components/credit-meter";
+import { PreviewBadge } from "@/components/preview-badge";
 
 export function StatCards({
   totalGenerations,
@@ -33,6 +34,7 @@ export function StatCards({
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Credits</CardTitle>
+          <PreviewBadge />
         </CardHeader>
         <CardContent>
           <CreditMeter used={creditsUsed} total={creditsTotal} />

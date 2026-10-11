@@ -1,4 +1,4 @@
-import { getOpenAI, getAiModel } from "@/lib/openai";
+import { getOpenAI, getAiModel, getAiFallbackModels, isRetryableWithFallback } from "@/lib/openai";
 import { db } from "@/lib/db";
 import { MODEL_CONFIG, SYSTEM_PROMPTS } from "./config";
 import type { GenerateInput, WriterTone, WriterType } from "@/lib/validations/ai-writer";
@@ -39,15 +39,33 @@ export async function generateContent(userId: string, input: GenerateInput): Pro
 
   const userPrompt = `Tone: ${input.tone}\nLanguage: ${input.language}\nType: ${input.type}\nBrief:\n${input.prompt}\n\nWrite the content now. Start with a compelling title on the first line prefixed with "Title: ".`;
 
-  const completion = await openai.chat.completions.create({
-    model: getAiModel(),
-    temperature: MODEL_CONFIG.temperature,
-    max_tokens: MODEL_CONFIG.maxTokens,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-  });
+  const createCompletion = (model: string) =>
+    openai.chat.completions.create({
+      model,
+      temperature: MODEL_CONFIG.temperature,
+      max_tokens: MODEL_CONFIG.maxTokens,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    });
+
+  // Primary model first; on 429/404 try each AI_FALLBACK_MODELS entry once, in order.
+  const models = [getAiModel(), ...getAiFallbackModels()];
+  let completion: Awaited<ReturnType<typeof createCompletion>> | undefined;
+  let lastError: unknown;
+  for (const [i, model] of models.entries()) {
+    try {
+      completion = await createCompletion(model);
+      break;
+    } catch (error) {
+      lastError = error;
+      const next = models[i + 1];
+      if (!next || !isRetryableWithFallback(error)) throw error;
+      console.warn(`[AI_FALLBACK] ${model} failed (${(error as { status?: number }).status}); trying ${next}`);
+    }
+  }
+  if (!completion) throw lastError;
 
   const raw = completion.choices[0]?.message?.content?.trim() ?? "";
   if (!raw) throw new Error("Empty response from AI provider");

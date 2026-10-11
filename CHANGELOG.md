@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.4.4
+
+### Fixed
+- `/billing` was a static placeholder: the "Demo UI — Connect Stripe Keys to Activate" badge and the disabled checkout button were hardcoded and never checked any environment variable. The page now shows the real plans and the current subscription, and checkout activates whenever `STRIPE_SECRET_KEY` is set on the server. The demo badge appears only when it is missing.
+- Enterprise checkout used the Pro price. Enterprise now uses only `STRIPE_PRICE_ENTERPRISE`; without it the card shows "Contact sales" (when `SALES_CONTACT_URL` is set) or "Available on request", and never falls back to another plan's price.
+- `customer.subscription.deleted` now always sets the subscription to `CANCELED` (falls back to the customer ID for rows saved without a subscription ID). `customer.subscription.updated` also stores the renewal date.
+- `/pricing` and `/billing` show the checkout error message instead of silently stopping the spinner.
+- AI Writer: provider errors are shown as clear messages — 404 "Model unavailable", 402 "No credits", 429 "Rate limited", 401/403 "API key rejected". Raw provider error text is no longer sent to the browser (logged server-side).
+
+### Added
+- `AI_FALLBACK_MODELS` (optional, comma-separated): when the AI provider returns 429 (rate limited) or 404 (model not found), each fallback model is tried once, in order.
+- "Manage billing" button on `/billing` for subscribed users, opening the Stripe Customer Portal.
+- `STRIPE_PRICE_ENTERPRISE` and `SALES_CONTACT_URL` (both optional).
+- "Preview — demo data, not connected to the database" badge on the Teams page, the API Keys section and the Credits widget.
+- README / documentation: exact Stripe variable names (no `NEXT_PUBLIC_*` or publishable key needed), the exact webhook event list, and a note that OpenRouter model slugs change (https://openrouter.ai/models).
+
+### Removed
+- Inaccurate "keys are SHA-256 hashed" text and the fake `sk_live_****` / `sk_test_****` keys on the Teams page; "Generate New Key" is disabled in the preview. `GET /api/api-keys` now returns an empty list and `POST /api/api-keys` returns 501 instead of a fake key.
+- Developer notes visible to end users: on `/billing` ("Route /billing is now live — previously 404. Wire getStripeSession from lib/stripe.ts…"), `/teams` ("Stateless v1.4.0 — invites & keys mocked…"), `/dashboard` ("Analytics range defaults to 7d… Team & API Keys deferred to v1.3.1") and the usage chart ("replace with Recharts for CodeCanyon preview").
+
+### Changed
+- Team invite form says "Preview only — invitations are not sent yet." instead of claiming an invite was sent.
+- Starter button reads "Get Starter" (no trial is configured).
+
 ## 1.4.3
 
 ### Added

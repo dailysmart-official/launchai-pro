@@ -1,13 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PreviewBadge } from "@/components/preview-badge";
 
 export function ApiKeyManager({ keys }: { keys: { id: string; name: string; masked: string }[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>API Keys</CardTitle>
-        <CardDescription>Manage programmatic access — keys are SHA-256 hashed.</CardDescription>
+        <div className="flex flex-wrap items-center gap-2">
+          <CardTitle>API Keys</CardTitle>
+          <PreviewBadge />
+        </div>
+        <CardDescription>Manage programmatic access to your workspace.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {keys.length === 0 ? <p className="text-sm text-muted-foreground">No keys yet.</p> : null}
@@ -20,8 +24,7 @@ export function ApiKeyManager({ keys }: { keys: { id: string; name: string; mask
             <Badge variant="outline">Active</Badge>
           </div>
         ))}
-        <Button variant="outline" className="w-full">Generate New Key</Button>
-        <p className="text-xs text-muted-foreground">Keys are SHA256 hashed. Raw key shown once only.</p>
+        <Button variant="outline" className="w-full" disabled>Generate New Key</Button>
       </CardContent>
     </Card>
   );

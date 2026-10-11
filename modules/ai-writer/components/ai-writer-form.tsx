@@ -28,9 +28,9 @@ export default function AIWriterForm({ aiConfigured = true }: { aiConfigured?: b
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, tone, type, language }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.status === 503) throw new Error("AI generation needs an API key. See README.");
-      if (!res.ok) throw new Error(data.error ?? "Generation failed");
+      if (!res.ok) throw new Error(data.error ?? "Generation failed. Please try again.");
       setResult(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");

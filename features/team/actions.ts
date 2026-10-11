@@ -24,12 +24,8 @@ export async function createApiKeyAction(rawData: unknown) {
     const parsed = ApiKeyNameSchema.safeParse(rawData);
     if (!parsed.success) return ActionError("Invalid key name.");
 
-    // const key = `sk_live_${crypto.randomUUID().replace(/-/g,"")}`;
-    // const hashedKey = createHash("sha256").update(key).digest("hex");
-    // await db.apiKey.create({ data: { name: parsed.data.name, hash: hashedKey } });
-    // return { success: true, key }; // Show once only
-
-    return { success: true as const, maskedKey: `sk_live_****${parsed.data.name.slice(0, 4)}` };
+    // Preview: keys are not stored yet, so no key is issued.
+    return ActionError("API keys are a preview feature and are not available yet.");
   } catch (error) {
     console.error("[API_KEY_ERROR]", error);
     return ActionError("Unable to create API key.");

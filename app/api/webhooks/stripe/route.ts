@@ -55,16 +55,28 @@ export async function POST(req: Request) {
         }
         break;
       }
-      case "customer.subscription.updated":
-      case "customer.subscription.deleted": {
+      case "customer.subscription.updated": {
         const sub = event.data.object as import("stripe").Stripe.Subscription;
         await db.subscription.updateMany({
           where: { stripeSubscriptionId: sub.id },
           data: {
             status: (stripeStatusToPrisma[sub.status] ?? "INCOMPLETE") as SubscriptionStatus,
             stripePriceId: sub.items.data[0]?.price.id,
+            stripeCurrentPeriodEnd: new Date(sub.current_period_end * 1000),
           },
         });
+        break;
+      }
+      case "customer.subscription.deleted": {
+        // Subscription ended: always downgrade to CANCELED, whatever status Stripe reports.
+        const sub = event.data.object as import("stripe").Stripe.Subscription;
+        const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+        const canceled = { status: "CANCELED" as SubscriptionStatus };
+        const { count } = await db.subscription.updateMany({ where: { stripeSubscriptionId: sub.id }, data: canceled });
+        // Fallback for rows saved without a subscription ID
+        if (count === 0) {
+          await db.subscription.updateMany({ where: { stripeCustomerId: customerId, stripeSubscriptionId: null }, data: canceled });
+        }
         break;
       }
       default:

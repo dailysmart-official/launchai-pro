@@ -67,7 +67,7 @@ export function rateLimit(key: string, config: RateLimitConfig): RateLimitResult
   };
 }
 
-/** Presets — CodeCanyon enterprise defaults */
+/** Presets — default limits per route group */
 export const RATE_LIMITS = {
   /** AI generation — expensive (OpenAI cost) → strict */
   aiGenerate: { limit: 10, windowMs: 60_000 } as RateLimitConfig, // 10/min per user

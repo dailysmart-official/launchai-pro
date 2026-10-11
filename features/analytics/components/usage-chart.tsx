@@ -24,7 +24,6 @@ export function UsageChart({ buckets }: { buckets: { date: string; count: number
             </div>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground mt-3">Zero-dep chart — replace with Recharts for CodeCanyon preview (npm i recharts).</p>
       </CardContent>
     </Card>
   );

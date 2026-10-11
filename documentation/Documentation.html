@@ -41,11 +41,15 @@ npm run dev               # http://localhost:3000</code></pre>
 <tr><td><code>OPENAI_API_KEY</code></td><td>For AI Writer</td><td>API key for OpenAI or any OpenAI-compatible provider</td><td>platform.openai.com → API keys, or your provider's dashboard (e.g. openrouter.ai/keys)</td></tr>
 <tr><td><code>OPENAI_BASE_URL</code></td><td>No</td><td>API base URL. Leave empty for OpenAI</td><td>Your provider's docs, e.g. <code>https://openrouter.ai/api/v1</code></td></tr>
 <tr><td><code>AI_MODEL</code></td><td>No</td><td>Model name sent to the provider. Default <code>gpt-4o-mini</code></td><td>Your provider's model list, e.g. <code>openai/gpt-4o-mini</code> on OpenRouter</td></tr>
+<tr><td><code>AI_FALLBACK_MODELS</code></td><td>No</td><td>Comma-separated models tried in order when <code>AI_MODEL</code> returns 429 or 404</td><td>Same model list</td></tr>
 <tr><td><code>STRIPE_SECRET_KEY</code></td><td>For billing</td><td>Stripe secret key (<code>sk_...</code>)</td><td>Stripe Dashboard → Developers → API keys</td></tr>
 <tr><td><code>STRIPE_WEBHOOK_SECRET</code></td><td>For billing</td><td>Webhook signing secret (<code>whsec_...</code>)</td><td>Stripe Dashboard → Webhooks (or <code>stripe listen</code> locally)</td></tr>
 <tr><td><code>STRIPE_PRICE_STARTER</code></td><td>For billing</td><td>Price ID of the Starter plan (<code>price_...</code>)</td><td>Stripe Dashboard → Product catalog</td></tr>
 <tr><td><code>STRIPE_PRICE_PRO</code></td><td>For billing</td><td>Price ID of the Pro plan (<code>price_...</code>)</td><td>Same place</td></tr>
+<tr><td><code>STRIPE_PRICE_ENTERPRISE</code></td><td>No</td><td>Price ID of the Enterprise plan. If empty, Enterprise is not sold online</td><td>Same place</td></tr>
+<tr><td><code>SALES_CONTACT_URL</code></td><td>No</td><td>Enterprise "Contact sales" link, <code>https://...</code> or <code>mailto:...</code>. If empty, the card shows "Available on request"</td><td>Your contact page or sales email</td></tr>
 </table>
+<p>All Stripe variables are read on the server at request time. No <code>NEXT_PUBLIC_*</code> variable and no publishable key are needed (checkout redirects to the Stripe-hosted page). After changing them on Vercel, redeploy.</p>
 <p>Accepted aliases, useful when a host already defines them: <code>GOOGLE_CLIENT_ID</code> / <code>GOOGLE_CLIENT_SECRET</code> (for <code>AUTH_GOOGLE_ID</code> / <code>AUTH_GOOGLE_SECRET</code>), <code>NEXTAUTH_SECRET</code> (for <code>AUTH_SECRET</code>). Set either name, not both.</p>
 <h2>Feature → required keys</h2>
 <table>
@@ -54,16 +58,21 @@ npm run dev               # http://localhost:3000</code></pre>
 <tr><td>Dev login (local only)</td><td>the three above, <code>npm run dev</code></td></tr>
 <tr><td>Google login</td><td><code>AUTH_GOOGLE_ID</code>, <code>AUTH_GOOGLE_SECRET</code></td></tr>
 <tr><td>AI Writer (<code>/writer</code>, history, <code>/api/ai/generate</code>)</td><td>login, <code>DATABASE_URL</code>, <code>OPENAI_API_KEY</code></td></tr>
-<tr><td>Billing (<code>/billing</code>, checkout)</td><td><code>STRIPE_SECRET_KEY</code>, <code>STRIPE_PRICE_STARTER</code>, <code>STRIPE_PRICE_PRO</code></td></tr>
+<tr><td>Billing (<code>/billing</code>, checkout)</td><td><code>STRIPE_SECRET_KEY</code>, <code>STRIPE_PRICE_STARTER</code>, <code>STRIPE_PRICE_PRO</code> (optional <code>STRIPE_PRICE_ENTERPRISE</code>, <code>SALES_CONTACT_URL</code>)</td></tr>
 <tr><td>Subscription sync (webhook)</td><td><code>STRIPE_SECRET_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code></td></tr>
 </table>
-<p>Without <code>OPENAI_API_KEY</code> the <code>/writer</code> page shows the notice "AI generation needs an API key. See README." and disables the Generate button; the API returns HTTP 503. Without Stripe keys, checkout in development redirects to the dashboard with a mock success; in production it shows "Billing is not configured".</p>
+<p>Without <code>OPENAI_API_KEY</code> the <code>/writer</code> page shows the notice "AI generation needs an API key. See README." and disables the Generate button; the API returns HTTP 503. Without <code>STRIPE_SECRET_KEY</code>, <code>/billing</code> shows the badge "Demo UI — Connect Stripe Keys to Activate"; checkout in development redirects to the dashboard with a mock success, and in production it shows "Billing is not configured".</p>
 <h2>Using another AI provider (OpenRouter and others)</h2>
 <p>The AI Writer uses the OpenAI SDK, so it works with any OpenAI-compatible provider. Set the key, the base URL and a model name from that provider. Example for OpenRouter:</p>
 <pre><code>OPENAI_API_KEY="sk-or-..."
 OPENAI_BASE_URL="https://openrouter.ai/api/v1"
 AI_MODEL="openai/gpt-4o-mini"</code></pre>
 <p>Leave <code>OPENAI_BASE_URL</code> and <code>AI_MODEL</code> empty to use OpenAI with <code>gpt-4o-mini</code>. Restart the server after changing them.</p>
+<p>OpenRouter model slugs change over time, especially the free (<code>:free</code>) ones. If <code>/writer</code> shows "Model unavailable", pick a current slug from <a href="https://openrouter.ai/models">openrouter.ai/models</a> and update <code>AI_MODEL</code>.</p>
+<p>To keep <code>/writer</code> working when a model is rate limited (429) or removed (404), list backup models in <code>AI_FALLBACK_MODELS</code>, separated by commas. Each one is tried once, in order; other errors are not retried:</p>
+<pre><code>AI_FALLBACK_MODELS="nvidia/nemotron-3-super-120b-a12b:free,inclusionai/ling-3.1-flash"</code></pre>
+<p>The example uses free models only. Paid models via OpenRouter (for example <code>openai/gpt-4o-mini</code>) need credits on your OpenRouter account; without credits they fail with "No credits".</p>
+<p>Provider errors are shown in <code>/writer</code> as clear messages: 404 → "Model unavailable", 402 → "No credits", 429 → "Rate limited", 401/403 → API key rejected.</p>
 <h2>Database setup (Neon / PostgreSQL)</h2>
 <ol start="1">
 <li>Create a project at neon.tech (or any PostgreSQL provider) and copy the connection string.</li>
@@ -92,10 +101,10 @@ AI_MODEL="openai/gpt-4o-mini"</code></pre>
 </ol>
 <h2>Stripe</h2>
 <ol start="1">
-<li>Create two recurring prices in Stripe (Starter and Pro) and put their IDs in <code>STRIPE_PRICE_STARTER</code> and <code>STRIPE_PRICE_PRO</code>.</li>
+<li>Create recurring prices in Stripe (Starter and Pro, optionally Enterprise) and put their IDs in <code>STRIPE_PRICE_STARTER</code>, <code>STRIPE_PRICE_PRO</code> and <code>STRIPE_PRICE_ENTERPRISE</code>.</li>
 <li>Put your secret key in <code>STRIPE_SECRET_KEY</code>. Use test keys (<code>sk_test_...</code>) until you are ready to go live.</li>
-<li>Webhook endpoint: <code>https://YOUR-DOMAIN/api/webhooks/stripe</code>. Subscribe to these events:<ul><li><code>checkout.session.completed</code></li><li><code>customer.subscription.updated</code></li><li><code>customer.subscription.deleted</code></li></ul></li>
-<li>Copy the endpoint's signing secret into <code>STRIPE_WEBHOOK_SECRET</code>.</li>
+<li>Webhook endpoint: <code>https://YOUR-DOMAIN/api/webhooks/stripe</code>. Subscribe to exactly these events (the handler ignores all others):<ul><li><code>checkout.session.completed</code> — marks the subscription active</li><li><code>customer.subscription.updated</code> — syncs status, price and renewal date</li><li><code>customer.subscription.deleted</code> — downgrades the user (status <code>CANCELED</code>)</li></ul></li>
+<li>Copy the endpoint's signing secret into <code>STRIPE_WEBHOOK_SECRET</code>. The "Manage billing" button on <code>/billing</code> opens the Stripe Customer Portal. Activate it once in Stripe Dashboard → Settings → Billing → Customer portal (separately for test and live mode).</li>
 <li>Local testing with the Stripe CLI:</li>
 </ol>
 <pre><code>stripe listen --forward-to localhost:3000/api/webhooks/stripe</code></pre>
@@ -138,7 +147,9 @@ documentation/  Documentation.html (same content as this file)</code></pre>
 <li><strong><code>P3005 The database schema is not empty</code></strong>: the database was created with <code>db push</code>; run the <code>migrate resolve --applied</code> command from "Database setup" once.</li>
 <li><strong>Database errors on first load</strong>: run <code>npx prisma migrate deploy</code> and check <code>DATABASE_URL</code>.</li>
 <li><strong>AI Writer shows "needs an API key" or returns 503</strong>: <code>OPENAI_API_KEY</code> is missing.</li>
-<li><strong>AI Writer returns 401/404 from your provider</strong>: check that <code>OPENAI_BASE_URL</code> and <code>AI_MODEL</code> match your provider (see "Using another AI provider").</li>
+<li><strong>AI Writer shows "Model unavailable"</strong>: <code>AI_MODEL</code> is not a valid model at your provider; on OpenRouter check <a href="https://openrouter.ai/models">openrouter.ai/models</a>.</li>
+<li><strong>AI Writer shows "No credits" or "Rate limited"</strong>: add credits at your provider or wait and retry. Free models are often rate limited; set <code>AI_FALLBACK_MODELS</code>.</li>
+<li><strong><code>/billing</code> shows "Demo UI — Connect Stripe Keys to Activate"</strong>: <code>STRIPE_SECRET_KEY</code> is not set in this deployment; set it and redeploy.</li>
 </ul>
 <h2>License and credits</h2>
 <p>See <code>LICENSE.txt</code> and <code>Credits.txt</code>. You bring your own OpenAI, Stripe and database accounts; this product is not affiliated with them.</p>

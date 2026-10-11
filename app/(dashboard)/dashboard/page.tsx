@@ -79,9 +79,6 @@ export default async function DashboardPage() {
 
       <GenerationHistory items={history} />
 
-      <p className="text-xs text-muted-foreground">
-        Analytics range defaults to 7d — query <code className="rounded bg-muted px-1">/api/analytics/usage?range=30d</code> for 30-day view. Team & API Keys deferred to v1.3.1.
-      </p>
       <AiAssistantFab href="/dashboard/writer" />
     </div>
   );

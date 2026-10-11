@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InviteForm } from "@/features/team/components/invite-form";
 import { MemberList } from "@/features/team/components/member-list";
 import { ApiKeyManager } from "@/features/team/components/api-key-manager";
+import { PreviewBadge } from "@/components/preview-badge";
 import type { TeamMember } from "@/features/team/types";
 
 export const metadata = { title: "Team - LaunchAI Pro" };
@@ -31,16 +32,17 @@ export default async function TeamsPage() {
     },
   ];
 
-  const apiKeys = [
-    { id: "k1", name: "Production", masked: "sk_live_****Prod" },
-    { id: "k2", name: "Development", masked: "sk_test_****Deve" },
-  ];
+  // Preview: nothing is stored yet, so no keys are shown.
+  const apiKeys: { id: string; name: string; masked: string }[] = [];
 
   return (
     <main className="py-8 px-4 max-w-5xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Team Workspace</h1>
-        <p className="text-muted-foreground">Manage members and API access — Enterprise tier preview.</p>
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-bold">Team Workspace</h1>
+          <PreviewBadge />
+        </div>
+        <p className="text-muted-foreground">Manage members and API access.</p>
       </div>
 
       <Suspense fallback={<Skeleton className="h-[120px] w-full" />}>
@@ -50,12 +52,6 @@ export default async function TeamsPage() {
       <MemberList members={members} />
 
       <ApiKeyManager keys={apiKeys} />
-
-      <p className="text-xs text-muted-foreground">
-        Stateless v1.4.0 — invites &amp; keys mocked for marketplace preview. Persist with SHA-256 + Prisma in v1.4.1. API:{" "}
-        <code className="rounded bg-muted px-1">POST /api/team/invite</code> ·{" "}
-        <code className="rounded bg-muted px-1">POST /api/api-keys</code>
-      </p>
     </main>
   );
 }

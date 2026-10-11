@@ -19,7 +19,7 @@ export function InviteForm() {
       const result = await inviteMemberAction({ email, role: "member" });
       if (result.success) {
         setEmail("");
-        setMessage(`Invite sent to ${email}`);
+        setMessage("Preview only — invitations are not sent yet.");
       } else {
         setMessage(result.error);
       }

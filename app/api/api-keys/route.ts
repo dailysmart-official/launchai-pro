@@ -6,9 +6,8 @@ import { rateLimit, RATE_LIMITS, getRateLimitKey, rateLimitHeaders } from "@/lib
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function maskedFromName(name: string): string {
-  return `sk_live_****${name.slice(0, 4)}`;
-}
+// Preview: API keys are not stored yet, so none are listed and none are issued.
+const PREVIEW_MESSAGE = "API keys are a preview feature and are not available yet.";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -20,11 +19,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Too Many Requests" }, { status: 429, headers: rateLimitHeaders(rl) });
   }
 
-  // Stateless mock list
-  const keys = [
-    { id: "k1", name: "Production", masked: maskedFromName("Production"), createdAt: new Date().toISOString() },
-  ];
-  return NextResponse.json({ keys }, { headers: rateLimitHeaders(rl) });
+  return NextResponse.json({ keys: [], preview: true }, { headers: rateLimitHeaders(rl) });
 }
 
 export async function POST(req: NextRequest) {
@@ -52,7 +47,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422, headers: rateLimitHeaders(rl) });
   }
 
-  // In production: const raw = `sk_live_${crypto.randomUUID().replace(/-/g,"")}`; hashed SHA256 stored, raw returned once.
-  const maskedKey = maskedFromName(parsed.data.name);
-  return NextResponse.json({ success: true, maskedKey, name: parsed.data.name }, { status: 201, headers: rateLimitHeaders(rl) });
+  return NextResponse.json({ error: PREVIEW_MESSAGE, preview: true }, { status: 501, headers: rateLimitHeaders(rl) });
 }
