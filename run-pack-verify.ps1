@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 $ProjectRoot = "C:\projects\launchai-pro"
 $TempStaging = "C:\Temp\launchai-pro-zip"
-$ZipOutput = "C:\projects\launchai-pro-releases\launchai-pro-v1.4.4.zip"
+$ZipOutput = "C:\projects\launchai-pro-releases\launchai-pro-v1.4.5.zip"
 
 Write-Host "=== STAGING ===" -ForegroundColor Cyan
 if (Test-Path $TempStaging) { Remove-Item -Recurse -Force $TempStaging }

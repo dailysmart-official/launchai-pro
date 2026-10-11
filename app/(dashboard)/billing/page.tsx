@@ -2,8 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { db, withRetry } from "@/lib/db";
-import { getBillingConfig, planForPrice } from "@/lib/stripe";
+import { getBillingConfig } from "@/lib/stripe";
+import { getSubscriptionSummary } from "@/features/billing/queries";
 import { PricingTable } from "@/features/billing/components/pricing-table";
 import { ManageBillingButton } from "@/features/billing/components/manage-billing-button";
 
@@ -21,18 +21,12 @@ export default async function BillingPage({
   const params = await searchParams;
   const config = getBillingConfig();
 
-  const subscription = await withRetry(() =>
-    db.subscription.findFirst({
-      where: { userId },
-      orderBy: { updatedAt: "desc" },
-      select: { status: true, stripePriceId: true, stripeCurrentPeriodEnd: true, stripeCustomerId: true },
-    })
-  ).catch((e) => {
+  const summary = await getSubscriptionSummary(userId).catch((e) => {
     console.error("[BillingPage] DB unreachable after retries:", e);
     return null;
   });
-  const isActive = subscription?.status === "ACTIVE" || subscription?.status === "TRIALING";
-  const planName = isActive ? planForPrice(subscription?.stripePriceId) ?? "Paid plan" : "Free";
+  const subscribed = Boolean(summary?.hasLiveSubscription);
+  const planName = subscribed ? summary?.currentPlanId ?? "Paid plan" : "Free";
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
@@ -59,23 +53,23 @@ export default async function BillingPage({
         <CardHeader>
           <CardTitle>Current plan</CardTitle>
           <CardDescription>
-            {subscription?.stripeCurrentPeriodEnd && isActive
-              ? `Renews ${subscription.stripeCurrentPeriodEnd.toLocaleDateString()}`
+            {subscribed
+              ? `${summary?.currentPeriodEnd ? `Renews ${summary.currentPeriodEnd.toLocaleDateString()}. ` : ""}Change or cancel your plan via Manage billing.`
               : "Choose a plan below to upgrade."}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-lg font-semibold capitalize">{planName}</span>
-            {subscription && (
-              <Badge variant={isActive ? "default" : "secondary"}>{subscription.status.toLowerCase().replace("_", " ")}</Badge>
+            {summary?.status && (
+              <Badge variant={subscribed ? "default" : "secondary"}>{summary.status.toLowerCase().replace("_", " ")}</Badge>
             )}
           </div>
-          {config.enabled && subscription?.stripeCustomerId && <ManageBillingButton />}
+          {config.enabled && summary?.stripeCustomerId && <ManageBillingButton />}
         </CardContent>
       </Card>
 
-      <PricingTable config={config} />
+      <PricingTable config={config} subscription={summary} />
     </div>
   );
 }

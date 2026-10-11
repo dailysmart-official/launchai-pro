@@ -132,7 +132,7 @@ On first login this creates a matching user row in the database. The provider is
    - `customer.subscription.updated` — syncs status, price and renewal date
    - `customer.subscription.deleted` — downgrades the user (status `CANCELED`)
 4. Copy the endpoint's signing secret into `STRIPE_WEBHOOK_SECRET`.
-   The "Manage billing" button on `/billing` opens the Stripe Customer Portal. Activate it once in Stripe Dashboard → Settings → Billing → Customer portal (separately for test and live mode).
+   The "Manage billing" button on `/billing` opens the Stripe Customer Portal. Activate it once in Stripe Dashboard → Settings → Billing → Customer portal (separately for test and live mode). Subscribed users change or cancel their plan there; the app never starts a second checkout for a user who already has a subscription.
 5. Local testing with the Stripe CLI:
 
 ```bash

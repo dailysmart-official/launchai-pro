@@ -1,6 +1,6 @@
 import { getOpenAI, getAiModel, getAiFallbackModels, isRetryableWithFallback } from "@/lib/openai";
 import { db } from "@/lib/db";
-import { MODEL_CONFIG, SYSTEM_PROMPTS } from "./config";
+import { MAX_TOKENS_BY_TYPE, MODEL_CONFIG, SYSTEM_PROMPTS } from "./config";
 import type { GenerateInput, WriterTone, WriterType } from "@/lib/validations/ai-writer";
 import type { GenerationTone, GenerationType } from "@prisma/client";
 
@@ -27,6 +27,8 @@ export interface GenerationResult {
   content: string;
   title?: string | null;
   tokens?: number | null;
+  /** True when the provider stopped because it hit the output limit (finish_reason "length"). */
+  truncated: boolean;
 }
 
 /**
@@ -43,7 +45,7 @@ export async function generateContent(userId: string, input: GenerateInput): Pro
     openai.chat.completions.create({
       model,
       temperature: MODEL_CONFIG.temperature,
-      max_tokens: MODEL_CONFIG.maxTokens,
+      max_tokens: MAX_TOKENS_BY_TYPE[input.type],
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -67,8 +69,11 @@ export async function generateContent(userId: string, input: GenerateInput): Pro
   }
   if (!completion) throw lastError;
 
-  const raw = completion.choices[0]?.message?.content?.trim() ?? "";
-  if (!raw) throw new Error("Empty response from AI provider");
+  const choice = completion.choices[0];
+  const raw = choice?.message?.content?.trim() ?? "";
+  const truncated = choice?.finish_reason === "length";
+  // Reasoning models can spend the whole budget before writing any visible text.
+  if (!raw) throw new Error(truncated ? "AI_EMPTY_OUTPUT_LENGTH" : "Empty response from AI provider");
 
   // Extract title if present
   let title: string | null = null;
@@ -98,7 +103,7 @@ export async function generateContent(userId: string, input: GenerateInput): Pro
     },
   });
 
-  return { id: record.id, content, title, tokens };
+  return { id: record.id, content, title, tokens, truncated };
 }
 
 export async function listGenerations(userId: string, limit = 20) {

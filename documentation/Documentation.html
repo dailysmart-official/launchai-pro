@@ -104,7 +104,7 @@ AI_MODEL="openai/gpt-4o-mini"</code></pre>
 <li>Create recurring prices in Stripe (Starter and Pro, optionally Enterprise) and put their IDs in <code>STRIPE_PRICE_STARTER</code>, <code>STRIPE_PRICE_PRO</code> and <code>STRIPE_PRICE_ENTERPRISE</code>.</li>
 <li>Put your secret key in <code>STRIPE_SECRET_KEY</code>. Use test keys (<code>sk_test_...</code>) until you are ready to go live.</li>
 <li>Webhook endpoint: <code>https://YOUR-DOMAIN/api/webhooks/stripe</code>. Subscribe to exactly these events (the handler ignores all others):<ul><li><code>checkout.session.completed</code> — marks the subscription active</li><li><code>customer.subscription.updated</code> — syncs status, price and renewal date</li><li><code>customer.subscription.deleted</code> — downgrades the user (status <code>CANCELED</code>)</li></ul></li>
-<li>Copy the endpoint's signing secret into <code>STRIPE_WEBHOOK_SECRET</code>. The "Manage billing" button on <code>/billing</code> opens the Stripe Customer Portal. Activate it once in Stripe Dashboard → Settings → Billing → Customer portal (separately for test and live mode).</li>
+<li>Copy the endpoint's signing secret into <code>STRIPE_WEBHOOK_SECRET</code>. The "Manage billing" button on <code>/billing</code> opens the Stripe Customer Portal. Activate it once in Stripe Dashboard → Settings → Billing → Customer portal (separately for test and live mode). Subscribed users change or cancel their plan there; the app never starts a second checkout for a user who already has a subscription.</li>
 <li>Local testing with the Stripe CLI:</li>
 </ol>
 <pre><code>stripe listen --forward-to localhost:3000/api/webhooks/stripe</code></pre>

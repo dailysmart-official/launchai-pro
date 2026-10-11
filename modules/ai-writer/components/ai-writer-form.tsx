@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -7,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LANGUAGE_OPTIONS, WRITER_TONE_OPTIONS, WRITER_TYPE_OPTIONS } from "../config";
 import { Loader2, Sparkles, Copy, Check } from "lucide-react";
+import { Markdown } from "@/components/markdown";
 
-type GenerateResponse = { id: string; result: string; title?: string | null };
+type GenerateResponse = { id: string; result: string; title?: string | null; truncated?: boolean };
 
 export default function AIWriterForm({ aiConfigured = true }: { aiConfigured?: boolean }) {
+  const router = useRouter();
   const [prompt, setPrompt] = React.useState("");
   const [tone, setTone] = React.useState("professional");
   const [type, setType] = React.useState("blog-post");
@@ -32,6 +35,8 @@ export default function AIWriterForm({ aiConfigured = true }: { aiConfigured?: b
       if (res.status === 503) throw new Error("AI generation needs an API key. See README.");
       if (!res.ok) throw new Error(data.error ?? "Generation failed. Please try again.");
       setResult(data);
+      // Re-fetch server data so "Recent Generations" includes the new item.
+      router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally { setLoading(false); }
@@ -97,7 +102,7 @@ export default function AIWriterForm({ aiConfigured = true }: { aiConfigured?: b
         <CardContent className="flex-1">
           {!result && !loading && <div className="flex h-full min-h-[280px] items-center justify-center rounded-md border border-dashed p-6 text-sm text-muted-foreground">No content yet. Fill the form and hit Generate.</div>}
           {loading && <div className="flex h-full min-h-[280px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
-          {result && <div className="space-y-3">{result.title && <h3 className="text-lg font-semibold">{result.title}</h3>}<div className="whitespace-pre-wrap rounded-md bg-muted p-4 text-sm">{result.result}</div></div>}
+          {result && <div className="space-y-3">{result.title && <h3 className="text-lg font-semibold">{result.title}</h3>}<Markdown className="rounded-md bg-muted p-4">{result.result}</Markdown>{result.truncated && <p role="status" className="text-xs text-muted-foreground">Output was truncated — the model reached its length limit. Try a shorter brief or generate the rest separately.</p>}</div>}
         </CardContent>
       </Card>
     </div>

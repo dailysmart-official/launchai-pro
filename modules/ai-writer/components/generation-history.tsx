@@ -16,8 +16,25 @@ export type GenerationItem = {
   createdAt: string;
 };
 
+/** Short plain-text preview: strips the most common Markdown syntax. */
+function toPlainPreview(md: string): string {
+  return md
+    .replace(/^\s*\|?\s*:?-{3,}.*$/gm, "") // table separator rows
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/(\*\*|__)(.+?)\1/g, "$2")
+    .replace(/(\*|_)(.+?)\1/g, "$2")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^\s*>\s?/gm, "")
+    .replace(/\|/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export default function GenerationHistory({ initial }: { initial: GenerationItem[] }) {
   const [items, setItems] = React.useState(initial);
+  // Server data changes after router.refresh() (e.g. a new generation): resync.
+  React.useEffect(() => setItems(initial), [initial]);
 
   async function handleDelete(id: string) {
     const res = await fetch(`/api/ai/generate/${id}`, { method: "DELETE" });
@@ -47,7 +64,7 @@ export default function GenerationHistory({ initial }: { initial: GenerationItem
             </div>
           </CardHeader>
           <CardContent>
-            <p className="whitespace-pre-wrap text-sm text-muted-foreground line-clamp-6">{item.result}</p>
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground line-clamp-6">{toPlainPreview(item.result)}</p>
           </CardContent>
         </Card>
       ))}

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.5
+
+### Fixed
+- AI Writer "Recent Generations" did not update after a new generation: the list kept its first server snapshot (`useState(initial)`) and nothing refreshed it. The page now refreshes its server data after each generation and the list resyncs. Generations were already saved and queried with the same signed-in user ID.
+- Long AI Writer outputs were cut off mid-sentence: every content type used one fixed `max_tokens` of 2000, and reasoning models (common among free OpenRouter models) spend part of that budget on hidden reasoning. Limits are now set per content type (blog post and landing page 4096, email 2048, product description 1536, ad copy and social post 1024). If the provider still stops at the limit (`finish_reason: "length"`), the result shows "Output was truncated"; if it stops before writing any text, the error says so instead of a generic failure.
+- AI Writer result showed raw Markdown (`**bold**`, `###`, table pipes). It is now rendered as formatted Markdown (headings, lists, tables) with `react-markdown` + `remark-gfm`. Raw HTML is never rendered (it is shown as escaped text), images are not loaded and unsafe link protocols are removed. Copy still copies the plain Markdown. History previews show plain text.
+- Billing for subscribed users: the current plan is labelled "Current plan" with no checkout button, and other plans show "Change plan via Manage billing" (on `/billing` and `/pricing`).
+- Duplicate subscriptions: `createCheckoutAction` refuses to start a checkout when the user already has a subscription that still exists in Stripe (active, trialing, past due or unpaid). Checkout also reuses the user's existing Stripe customer instead of creating a new one each time.
+
+### Added
+- Dependencies: `react-markdown` ^9.1.0, `remark-gfm` ^4.0.1.
+
 ## 1.4.4
 
 ### Fixed

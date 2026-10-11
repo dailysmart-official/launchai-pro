@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     const result = await generateContent(userId, parsed.data);
     return NextResponse.json(
-      { id: result.id, result: result.content, title: result.title, tokens: result.tokens },
+      { id: result.id, result: result.content, title: result.title, tokens: result.tokens, truncated: result.truncated },
       { headers: rateLimitHeaders(rl) }
     );
   } catch (error: unknown) {
@@ -47,6 +47,12 @@ export async function POST(req: Request) {
       );
     }
     const message = error instanceof Error ? error.message : "";
+    if (message === "AI_EMPTY_OUTPUT_LENGTH") {
+      return NextResponse.json(
+        { error: "The model reached its length limit before writing any text. Please try again or use a different model.", code: "output_truncated" },
+        { status: 502 }
+      );
+    }
     if (message.includes("OPENAI_API_KEY")) {
       return NextResponse.json({ error: "AI generation needs an API key. See README.", code: "not_configured" }, { status: 503 });
     }

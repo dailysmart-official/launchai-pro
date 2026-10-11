@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { PricingTable } from "@/features/billing/components/pricing-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getBillingConfig } from "@/lib/stripe";
+import { auth } from "@/lib/auth";
+import { getSubscriptionSummary } from "@/features/billing/queries";
 
 export const metadata = {
   title: "Pricing - LaunchAI Pro | Simple, Transparent Plans",
@@ -11,7 +13,12 @@ export const metadata = {
 // Read Stripe env vars at request time, not at build time.
 export const dynamic = "force-dynamic";
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  // Signed-in subscribers see their current plan instead of checkout buttons.
+  const session = await auth();
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  const subscription = userId ? await getSubscriptionSummary(userId).catch(() => null) : null;
+
   return (
     <main className="py-16 px-4">
       <div className="text-center mb-12">
@@ -19,7 +26,7 @@ export default function PricingPage() {
         <p className="text-muted-foreground mt-3">Start free, scale as you grow. Cancel anytime.</p>
       </div>
       <Suspense fallback={<Skeleton className="h-[400px] w-full max-w-6xl mx-auto" />}>
-        <PricingTable config={getBillingConfig()} />
+        <PricingTable config={getBillingConfig()} subscription={subscription} />
       </Suspense>
     </main>
   );

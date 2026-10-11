@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { createCheckoutAction } from "../actions";
 import type { Plan } from "../types";
+import type { PlanId } from "../schema";
 import type { BillingConfig } from "@/lib/stripe";
 
 const PLANS: Plan[] = [
@@ -16,7 +17,21 @@ const PLANS: Plan[] = [
   { id: "enterprise", name: "Enterprise", price: { month: 99, year: 990 }, credits: 200000, features: ["200,000 AI Credits", "SSO & SAML", "Dedicated Manager", "Custom Models"], cta: "Get Enterprise" },
 ];
 
-export function PricingTable({ interval = "month", config }: { interval?: "month" | "year"; config: BillingConfig }) {
+/** The signed-in user's subscription, if any. Omit for visitors. */
+export interface PricingSubscription {
+  hasLiveSubscription: boolean;
+  currentPlanId: PlanId | null;
+}
+
+export function PricingTable({
+  interval = "month",
+  config,
+  subscription,
+}: {
+  interval?: "month" | "year";
+  config: BillingConfig;
+  subscription?: PricingSubscription | null;
+}) {
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -39,6 +54,16 @@ export function PricingTable({ interval = "month", config }: { interval?: "month
 
   function renderAction(plan: Plan) {
     const variant = plan.popular ? "default" : "outline";
+    // Subscribed: no second checkout. The current plan is labelled; other plans change via the portal.
+    if (subscription?.hasLiveSubscription) {
+      return plan.id === subscription.currentPlanId ? (
+        <p className="rounded-md border border-primary/40 bg-primary/5 py-2 text-center text-sm font-medium">Current plan</p>
+      ) : (
+        <Button disabled variant="outline" className="w-full">
+          Change plan via Manage billing
+        </Button>
+      );
+    }
     // Billing not configured: let the server action answer (dev mock / production message).
     if (!config.enabled || config.purchasable[plan.id]) {
       return (
@@ -63,6 +88,8 @@ export function PricingTable({ interval = "month", config }: { interval?: "month
     );
   }
 
+  const isCurrent = (plan: Plan) => Boolean(subscription?.hasLiveSubscription && subscription.currentPlanId === plan.id);
+
   return (
     <div className="max-w-6xl mx-auto space-y-4">
       {error ? (
@@ -72,8 +99,18 @@ export function PricingTable({ interval = "month", config }: { interval?: "month
       ) : null}
       <div className="grid gap-6 md:grid-cols-3">
         {PLANS.map((plan) => (
-          <Card key={plan.id} className={cn("flex flex-col relative", plan.popular && "border-primary shadow-lg scale-[1.02]")}>
-            {plan.popular && <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>}
+          <Card
+            key={plan.id}
+            className={cn(
+              "flex flex-col relative",
+              (isCurrent(plan) || (!subscription?.hasLiveSubscription && plan.popular)) && "border-primary shadow-lg scale-[1.02]"
+            )}
+          >
+            {isCurrent(plan) ? (
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Your plan</Badge>
+            ) : (
+              plan.popular && !subscription?.hasLiveSubscription && <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
+            )}
             <CardHeader>
               <CardTitle>{plan.name}</CardTitle>
               <div className="mt-4">

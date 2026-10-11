@@ -2,9 +2,9 @@
 
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
 import { stripe, getStripeSession, getPlanPrices, isStripeConfigured } from "@/lib/stripe";
 import { CheckoutSchema } from "./schema";
+import { getSubscriptionSummary } from "./queries";
 
 const ActionError = (message: string) => ({ success: false as const, error: message });
 
@@ -41,7 +41,13 @@ export async function createCheckoutAction(rawData: unknown) {
       );
     }
 
-    const stripeSession = await getStripeSession(priceId, user.id, user.email);
+    // Never start a second subscription: plan changes go through the Customer Portal.
+    const current = await getSubscriptionSummary(user.id);
+    if (current.hasLiveSubscription) {
+      return ActionError("You already have an active subscription. Change or cancel your plan via Manage billing.");
+    }
+
+    const stripeSession = await getStripeSession(priceId, user.id, user.email, current.stripeCustomerId);
     if (!stripeSession.url) {
       return ActionError("Unable to initiate checkout. Please try again.");
     }
@@ -65,17 +71,13 @@ export async function createPortalAction() {
       return ActionError("Please sign in to manage billing.");
     }
 
-    const subscription = await db.subscription.findFirst({
-      where: { userId, stripeCustomerId: { not: null } },
-      orderBy: { updatedAt: "desc" },
-      select: { stripeCustomerId: true },
-    });
-    if (!subscription?.stripeCustomerId) {
+    const { stripeCustomerId } = await getSubscriptionSummary(userId);
+    if (!stripeCustomerId) {
       return ActionError("No billing account found yet. Choose a plan first.");
     }
 
     const portal = await stripe.billingPortal.sessions.create({
-      customer: subscription.stripeCustomerId,
+      customer: stripeCustomerId,
       return_url: `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/billing`,
     });
     return { success: true as const, url: portal.url };

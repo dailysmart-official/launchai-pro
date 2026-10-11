@@ -37,5 +37,17 @@ export const LANGUAGE_OPTIONS = [
 export const MODEL_CONFIG = {
   model: "gpt-4o-mini", // default; override with the AI_MODEL env var
   temperature: 0.7,
-  maxTokens: 2000,
 } as const;
+
+/**
+ * Output token limit per content type. Generous on purpose: reasoning models
+ * (common among free OpenRouter models) spend part of this budget on hidden reasoning.
+ */
+export const MAX_TOKENS_BY_TYPE: Record<WriterType, number> = {
+  "blog-post": 4096,
+  "landing-page": 4096,
+  email: 2048,
+  "product-description": 1536,
+  "ad-copy": 1024,
+  "social-post": 1024,
+};

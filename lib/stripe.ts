@@ -31,12 +31,13 @@ export const stripe: Stripe = new Proxy({} as Stripe, {
   },
 });
 
-export async function getStripeSession(priceId: string, userId: string, email: string) {
+export async function getStripeSession(priceId: string, userId: string, email: string, customerId?: string | null) {
   return stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
-    customer_email: email,
+    // Reuse the existing Stripe customer so one user never ends up with several customers.
+    ...(customerId ? { customer: customerId } : { customer_email: email }),
     metadata: { userId, priceId },
     success_url: `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/billing?success=true`,
     cancel_url: `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/billing?canceled=true`,
